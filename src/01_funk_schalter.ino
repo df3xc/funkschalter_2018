@@ -245,10 +245,6 @@ void loop()
     dontSleepHW = checkDontSleepPin();
     BlumenGiessen(0, ts_giessen);
 
-  	if((Time.hour() < 7) & (Time.minute() == 2))  sleep(getSleepTime(58));
-
-   	if((Time.hour() > 11) & (Time.minute() == 2)) sleep(getSleepTime(58));   
-
   } // if fast_counter
 
   if ((fast_counter % 39000) == 0) // once per 2 minutes
@@ -262,6 +258,7 @@ void loop()
       { 
         println("Terminal disabled");      
         termEnabled == 0;
+        WriteToDatabase("CONTROL","TERMINAL disabled by timeout");
       }
     }
   }
@@ -349,9 +346,9 @@ void printStatus()
   checkDontSleepPin();
 
   readAdcChannels();
-  println("AiPumpeMain     [mV] : ", AiPumpeMain);
-  println("AiPumpeReserve  [mV] : ", AiPumpeReserve);
-  println("Ai12V           [mV] : ", Ai12V);
+  println("Main    [mV] : ", AiPumpeMain);
+  println("Reserve [mV] : ", AiPumpeReserve);
+  println("12V     [mV] : ", Ai12V);
 
   st_main_pumpe = digitalRead(DO_PUMPE_MAIN);
 
@@ -394,10 +391,10 @@ void printSlowStatus()
 
   EEPROM.get(0, control);
 
-  println("Control.version         :  ", control.version);
-  println("Control.dontSleep       :  ", control.dontSleepSW);
-  println("Control.dontGiessen     :  ", control.dontGiessen);
-  println("Control.pumpe_count_down:  ", control.pumpe_count_down);
+  println("version         :  ", control.version);
+  println("dontSleep       :  ", control.dontSleepSW);
+  println("dontGiessen     :  ", control.dontGiessen);
+  println("pumpe_count_down:  ", control.pumpe_count_down);
 
   reportDontSleepPin();
 
@@ -604,6 +601,12 @@ void timeStamp()
           Time.second());
 
   Serial.print(timebuffer);
+
+  if (termEnabled == 1)
+  {
+    terminal.print(timebuffer); // Ausgabe an BLYNK APP terminal
+    terminal.flush();
+  } 
 }
 
 /*---------------------------------------------------------------------
