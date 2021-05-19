@@ -247,7 +247,7 @@ void loop()
 
   } // if fast_counter
 
-  if ((fast_counter % 39000) == 0) // once per 2 minutes
+  if ((fast_counter % 80000) == 0) // once per 4 minutes
   {
     printSlowStatus();
 
@@ -602,11 +602,11 @@ void timeStamp()
 
   Serial.print(timebuffer);
 
-  if (termEnabled == 1)
+/*   if (termEnabled == 1)
   {
     terminal.print(timebuffer); // Ausgabe an BLYNK APP terminal
     terminal.flush();
-  } 
+  }  */
 }
 
 /*---------------------------------------------------------------------
