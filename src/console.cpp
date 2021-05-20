@@ -61,6 +61,10 @@ void dispatchCommand(char c)
     WriteToDatabase("control", "PUMPE MAIN COUNTDOWN NOW ", control.pumpe_count_down);
     break;
 
+  case 'a':
+    printSlowStatus();
+    break;
+
   case 'b':
     BlumenGiessen(1, ts_giessen);
     break;

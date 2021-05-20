@@ -54,7 +54,7 @@ int switch_pumpe_main(int new_state, int laufzeit) // pumpe ein- oder aus
     readAdcChannels();
     Serial.printlnf(" AiPumpeMain    : %d [mV]", AiPumpeMain);
 
-    WriteToDatabase("ADC", "Switched AiPumpeMain [mV] : ", AiPumpeMain);
+    WriteToDatabase("ADC", "AiPumpeMain [mV] : ", AiPumpeMain);
     Serial.printlnf(" --------------------------------------------- ");
 
     return (st_main_pumpe);
@@ -105,7 +105,7 @@ int switch_pumpe_reserve(int new_state, int laufzeit)
     readAdcChannels();
     Serial.printlnf(" AiPumpeReserve    : %d [mV]", AiPumpeReserve);
 
-    WriteToDatabase("ADC", "Switched AiPumpeReserve [mV] : ", AiPumpeReserve);
+    WriteToDatabase("ADC", "AiPumpeReserve [mV] : ", AiPumpeReserve);
     Serial.printlnf(" --------------------------------------------- ");
 
     return (st_reserve_pumpe);

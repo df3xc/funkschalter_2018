@@ -2,7 +2,7 @@
 #ifndef _funk_x
 #define _funk_x
 
-#define SW_VERSION 15
+#define SW_VERSION 16
 
 #define ON 1
 #define OFF 0
@@ -68,5 +68,6 @@ extern int slow_counter;
  void sleep(int minutes);
  int getSleepTime(int target);
  void readAdcChannels();
+ void printSlowStatus();
 
 #endif

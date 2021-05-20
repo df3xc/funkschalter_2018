@@ -202,7 +202,7 @@ void sleep(int minutes)
       TankFuellen(LOW_LEVEL_TANKFUELLEN);
     }
 
-    fast_counter = 36000;
+    fast_counter = 60000;
     termEnabled = 0;
   }
 }
@@ -231,9 +231,9 @@ void loop()
     CountDown();
 
     // wir schlafen bis zur nächsten Stunde
-    if (Time.minute() == 9)
+    if (Time.minute() == 10)
     {
-      sleep(getSleepTime(57));
+      sleep(getSleepTime(55));
     }
   }
 
@@ -338,10 +338,15 @@ void printStatus()
   wifiReady = WiFi.ready();
   cloudReady = Particle.connected();
 
+  timeStamp();
+
+  if (termEnabled == 1)
+    terminal.println(timebuffer);
+
   println(" tnow: ", tnow);
-  printTnow(tnow);
+
   Serial.printf(" ts_giessen: %d ", ts_giessen);
-  printTnow(ts_giessen);
+  println(" tgiessen ",ts_giessen);
 
   checkDontSleepPin();
 
@@ -367,7 +372,6 @@ void printStatus()
   Serial.printlnf(" waterlevel: %d ", waterlevel);
   Serial.printlnf(" wifi=%s cloud=%s fast_counter=%d ", (wifiReady ? "on" : "off"), (cloudReady ? "on" : "off"), fast_counter);
 
-
 }
 
 /*---------------------------------------------------------------------
@@ -376,6 +380,8 @@ print status infos
 void printSlowStatus()
 
 {
+  terminal.clear();
+
   timeStamp();
 
   if (termEnabled == 1)
@@ -391,14 +397,19 @@ void printSlowStatus()
 
   EEPROM.get(0, control);
 
-  println("version         :  ", control.version);
-  println("dontSleep       :  ", control.dontSleepSW);
-  println("dontGiessen     :  ", control.dontGiessen);
-  println("pumpe_count_down:  ", control.pumpe_count_down);
+  println("version            : ", control.version);
+  println("dontSleep          : ", control.dontSleepSW);
+  println("dontGiessen        : ", control.dontGiessen);
+  println("pumpe_count_down   : ", control.pumpe_count_down);
+  println("reserve_repetitions: ", control.reserve_repetitions);
 
-  reportDontSleepPin();
+  WriteToDatabase("WASSER","reserve_repetitions: ", control.reserve_repetitions);
 
   waterlevel = ultra_sonic_measure();
+  //println("water level        : ", waterlevel);
+  WriteToDatabase("WASSER","WASSERSTAND : ",waterlevel);
+
+  reportDontSleepPin();
 
   readAdcChannels();
 
@@ -426,7 +437,7 @@ void printSlowStatus()
 
   sprintf(timebuffer, "TEMP IN:%d OUT:%d", temp_in, temp_out);
   WriteToDatabase("CONTROL", timebuffer);
-  println(" slow actions done ");
+  println(" ----------------------- ");
 }
 
 /*---------------------------------------------------------------------
@@ -452,7 +463,7 @@ void hwInit()
 
   EEPROM.get(0, control);
 
- ts_giessen = 7 * 60 + 1; // zu dieser Zeit wird die Wasserpumpe eingeschaltet
+  ts_giessen = 7 * 60 + 1; // zu dieser Zeit wird die Wasserpumpe eingeschaltet
 
   done_giessen = 0;
 }
@@ -576,6 +587,7 @@ int ledToggle(String command)
 void help()
 {
   println(" Hello ");
+  println(" a : Status");
   println(" b : Blumen giessen");
   println(" d : Zeitdauer Giessen verringern");
   println(" i : Zeitdauer Giessen erhoehen");

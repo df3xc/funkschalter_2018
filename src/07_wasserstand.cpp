@@ -71,7 +71,7 @@ int  ultra_sonic_measure()
   Serial.printlnf ( " ultra level average : %d mm", level);
   run_blynk();
 
-  WriteToDatabase("WASSER","WASSERSTAND : ",level);
+  //WriteToDatabase("WASSER","WASSERSTAND : ",level);
 
   return(level);
 
