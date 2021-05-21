@@ -105,7 +105,7 @@ void dispatchCommand(char c)
 
     case 'y':
     println(" Prepare Sleep ");
-    sleep(getSleepTime(57));
+    sleep(getSleepTime(55));
     break;  
 
   case 'z':

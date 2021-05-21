@@ -2,7 +2,7 @@
 #ifndef _funk_x
 #define _funk_x
 
-#define SW_VERSION 16
+#define SW_VERSION 18
 
 #define ON 1
 #define OFF 0
@@ -19,10 +19,10 @@
 
 struct control_struct {
   unsigned int version;
-  unsigned int dontSleepSW; // 1 = do not enter sleep Mode
-  unsigned int dontGiessen; // 1 = do not giessen
-  unsigned int pumpe_count_down;
-  unsigned int reserve_repetitions;
+  unsigned int dontSleepSW;         // 1 = do not enter sleep Mode
+  unsigned int dontGiessen;         // 1 = do not giessen
+  unsigned int pumpe_count_down;    // zeitdauer pumpe eingeschaltet * 5sec
+  unsigned int reserve_repetitions; // Anzahl Tank nachfüllen
 };
 
 extern struct control_struct control;

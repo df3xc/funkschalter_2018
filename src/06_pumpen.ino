@@ -134,9 +134,8 @@ int switch_pumpe_funk(int newState, int laufzeit) // pumpe ein- oder aus
 }
 
 /*---------------------------------------------------------------------
-CountDown Pumpen timer and switch off the pumpen
+CountDown Pumpen timer and switch off the pumpen if countDown = 0:
 ---------------------------------------------------------------------*/
-
 void CountDown()
 {
     if (main_countDown > 0)

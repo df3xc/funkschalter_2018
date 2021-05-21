@@ -111,18 +111,18 @@ void setup()
     EEPROM.put(0, control);
   }
 
-  WriteToDatabase("CONTROL", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
+  WriteToDatabase("RESET", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
 
   if (control.dontGiessen == 1)
   {
-    WriteToDatabase("WASSER", "WASSERSTAND : BLUMEN GIESSEN IST DEAKTIVIERT ");
+    WriteToDatabase("RESET", "WASSERSTAND : BLUMEN GIESSEN IST DEAKTIVIERT ");
   }
 
   help();
 
   tnow = getTime();
 
-  fast_counter = 36000;
+  fast_counter = 60000;
   termEnabled = 0;
 }
 
@@ -165,8 +165,8 @@ void sleep(int minutes)
 
     println(" *** WAKE UP *** ");
 
-    WriteToDatabase("WASSER", "#### WAKE UP ####");
-    WriteToDatabase("control", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
+    WriteToDatabase("WAKE UP", "#### WAKE UP ####");
+    WriteToDatabase("WAKE UP", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
 
     // Subscribe to the integration response event
     Particle.subscribe("particle/device/name", deviceNameHandler);
@@ -189,13 +189,13 @@ void sleep(int minutes)
 
     if (control.dontGiessen == 1)
     {
-      WriteToDatabase("WASSER", "WASSERSTAND : BLUMEN GIESSEN IST DEAKTIVIERT ");
+      WriteToDatabase("WAKE UP", "WASSERSTAND : BLUMEN GIESSEN IST DEAKTIVIERT ");
     }
 
-    get_Temperature(); // Temperature sensors not yet installed
+    get_Temperature(); 
     Serial.printlnf("temp in : %d  temp out : %d ", temp_in, temp_out);
     sprintf(timebuffer, "TEMP IN:%d OUT:%d", temp_in, temp_out);
-    WriteToDatabase("WASSER", timebuffer);
+    WriteToDatabase("WAKE UP", timebuffer);
 
     if ((Time.hour()>8) & (Time.hour()<11))
     {
@@ -403,14 +403,14 @@ void printSlowStatus()
   println("pumpe_count_down   : ", control.pumpe_count_down);
   println("reserve_repetitions: ", control.reserve_repetitions);
 
+  WriteToDatabase("WASSER","dontGiessen:", control.dontGiessen);
+  WriteToDatabase("WASSER","pumpe count down:", control.pumpe_count_down);
   WriteToDatabase("WASSER","reserve_repetitions: ", control.reserve_repetitions);
 
   waterlevel = ultra_sonic_measure();
-  //println("water level        : ", waterlevel);
   WriteToDatabase("WASSER","WASSERSTAND : ",waterlevel);
 
   reportDontSleepPin();
-
   readAdcChannels();
 
   if (AiPumpeMain > 1000)
@@ -487,14 +487,14 @@ void myWebHookHandler(const char *event, const char *data)
   {
     control.dontGiessen = 1;
     EEPROM.put(0, control);
-    WriteToDatabase("CONTROL", "WASSERSTAND : GIESSEN JETZT DEAKTIVIERT");
+    WriteToDatabase("CONTROL", "WASSERSTAND : GIESSEN DEAKTIVIERT by WebHook");
   }
 
   if ((String(data).startsWith("on")) & (control.dontGiessen == 1))
   {
     control.dontGiessen = 0;
     EEPROM.put(0, control);
-    WriteToDatabase("CONTROL", "WASSERSTAND : GIESSEN JETZT AKTIVIERT");
+    WriteToDatabase("CONTROL", "WASSERSTAND : GIESSEN AKTIVIERT by WebHook");
   }
 }
 /*---------------------------------------------------------------------
