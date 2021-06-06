@@ -251,6 +251,11 @@ void loop()
   {
     printSlowStatus();
 
+    if (tnow > (23*60) + 30)
+    {
+      done_giessen = 0; // armed for the next day
+    }
+
     if (termCounter > 0)
     {
       termCounter--;
@@ -769,6 +774,7 @@ BLYNK_WRITE(V7)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
+    done_giessen = 0;
     BlumenGiessen(1, ts_giessen);
     //st_funk_pumpe = switch_pumpe_funk(ON,3);
     //conrad_rsl_switch_code(4,EIN);

@@ -182,6 +182,7 @@ void CountDown()
 Blumengiessen
 now = 1 : jetzt sofort Giessen
 now = 0 : giesse wenn tnow = ts zur geplanten Zeit
+done_giessen muß 0 sein
 ---------------------------------------------------------------------*/
 void BlumenGiessen(int now, int ts)
 {
