@@ -46,8 +46,9 @@ int slow_counter = 0;  // used by LOOP to trigger slow actions
 int tnow;  // Uhrzeit in Minuten (24*hour+minute)
 int tsec;  // minuten * 60 + sekunden
 int t10sec; // minuten * 60 + (sekunden/10);
-int tmain_stop; // minuten * 60 + sekunden
-int tres_stop;  // minuten * 60 + sekunden
+int tmain_stop;  // minuten * 60 + sekunden
+int tres_stop;   // minuten * 60 + sekunden
+int tfunk_stop;  // minuten * 60 + sekunden
 
 int ts_giessen = 8 * 60 + 1; // Uhrzeit Wasserpumpe einschalten
 int done_giessen = 0;
@@ -912,6 +913,23 @@ BLYNK_WRITE(V14)
     println(" Terminal enabled  ");
     termCounter = 10;
     WriteToDatabase("CONTROL","TERMINAL enabled by Blynk Button");   
+  }
+}
+
+
+BLYNK_WRITE(V16)
+{
+  if (param.asInt() == 1) // Schalter nieder gedrückt ?
+  {
+   switch_pumpe_funk(OFF,0); // pumpe ein- oder aus  
+  }
+}
+
+BLYNK_WRITE(V17)
+{
+  if (param.asInt() == 1) // Schalter nieder gedrückt ?
+  {
+   switch_pumpe_funk(ON,90); // pumpe ein- oder aus  
   }
 }
 

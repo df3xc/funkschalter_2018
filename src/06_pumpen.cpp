@@ -202,7 +202,8 @@ done_giessen muß 0 sein
 void BlumenGiessen(int now, int ts)
 {
     
-    if (done_giessen == 1) return;
+    if ((now=0) & (done_giessen == 1)) 
+     return;
     
     if (tnow == ts || now == 1)
     {

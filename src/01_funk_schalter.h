@@ -48,6 +48,7 @@ extern int tnow;
 extern int tsec;
 extern int tmain_stop;
 extern int tres_stop; 
+extern int tfunk_stop;
 extern int termEnabled;
 extern int termCounter;
 
