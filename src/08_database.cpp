@@ -8,6 +8,11 @@ Write to my database at www.carstenlueck.de
 ---------------------------------------------------------------------*/
 void WriteToDatabase ( char* status,  char* option)
 {
+    if (Particle.connected() == false)
+    {
+        Serial.printlnf("### WARNING : not connected to cloud. cannot write to database");
+        return;
+    }    
     sprintf(buffer,"{\"status\":\"%s\",\"time\":\"%.2d:%.2d:%.2d\",\"date\":\"%.2d.%.2d.%.2d\",\"luefter\":\"PHOTON\",\"option\":\"%s\"}", \
                     status,Time.hour(),Time.minute(),Time.second(),Time.day(),Time.month(),Time.year(),option);
 
@@ -23,6 +28,14 @@ Write to my database at www.carstenlueck.de
 ---------------------------------------------------------------------*/
 void WriteToDatabase ( char* status,  char* option, int data)
 {
+    if (Particle.connected() == false)
+    {
+        Serial.printlnf("### WARNING : not connected to cloud. cannot write to database");
+        return;
+    }
+
+    
+
     sprintf(buffer,"{\"status\":\"%s\",\"time\":\"%.2d:%.2d:%.2d\",\"date\":\"%.2d.%.2d.%.2d\",\"luefter\":\"PHOTON\",\"option\":\"%s %2d\"}", \
                     status,Time.hour(),Time.minute(),Time.second(),Time.day(),Time.month(),Time.year(),option,data);
 

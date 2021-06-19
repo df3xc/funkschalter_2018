@@ -2,7 +2,7 @@
 #ifndef _funk_x
 #define _funk_x
 
-#define SW_VERSION 18
+#define SW_VERSION 20
 
 #define ON 1
 #define OFF 0
@@ -14,14 +14,14 @@
 
 #define TROCKENLAUF_SCHUTZ_LEVEL 70
 #define LOW_LEVEL_TANKFUELLEN 95
-#define RESERVE_PUMPE_LAUFZEIT  24
+#define RESERVE_PUMPE_LAUFZEIT  90
 #define MAX_NACHFUELL_REPETITIONS    5
 
 struct control_struct {
   unsigned int version;
   unsigned int dontSleepSW;         // 1 = do not enter sleep Mode
   unsigned int dontGiessen;         // 1 = do not giessen
-  unsigned int pumpe_count_down;    // zeitdauer pumpe eingeschaltet * 5sec
+  unsigned int pumpe_count_down;    // zeitdauer in sekunden
   unsigned int reserve_repetitions; // Anzahl Tank nachfüllen
 };
 
@@ -45,6 +45,9 @@ extern char buffer[];     // used by webhook / webrequest
 extern char timebuffer[];  // used by webhook / webrequest
 
 extern int tnow;
+extern int tsec;
+extern int tmain_stop;
+extern int tres_stop; 
 extern int termEnabled;
 extern int termCounter;
 
@@ -62,6 +65,7 @@ extern int slow_counter;
  void println( char* text);
  void println( char* text, int data);
  void println(char *text, String data);
+ int getTime();
  void reportToLuefter(char* text);
  void BlumenGiessen(int now, int ts);
  int  ultra_sonic_measure(void);

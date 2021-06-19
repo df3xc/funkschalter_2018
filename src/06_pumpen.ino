@@ -28,7 +28,9 @@ int switch_pumpe_main(int new_state, int laufzeit) // pumpe ein- oder aus
             return (st_main_pumpe);
         }
 
-        main_countDown = laufzeit;
+        tnow = getTime();
+        tmain_stop = tsec + laufzeit;
+
         digitalWrite(DO_PUMPE_MAIN, 1);
         WriteToDatabase("WASSER", "HAUPT-PUMPE EINGESCHALTET : ", main_countDown);
     }
@@ -78,13 +80,14 @@ int switch_pumpe_reserve(int new_state, int laufzeit)
         WriteToDatabase("WASSER", "WASSERSTAND before res-pumpe ON : ", old_level);
         digitalWrite(DO_PUMPE_RESERVE, 1);
         WriteToDatabase("WASSER", "RESERVE-PUMPE EINGESCHALTET ");
-        reserve_countDown = laufzeit;
-    }
+
+        tnow = getTime();
+        tres_stop = tsec + laufzeit;
+     }
 
     if ((new_state == OFF) & (st_reserve_pumpe == ON))
     {
         digitalWrite(DO_PUMPE_RESERVE, 0);
-        reserve_countDown = 0;
         WriteToDatabase("WASSER", "RESERVE-PUMPE AUSGESCHALTET. FUELLUNG NR. ",control.reserve_repetitions);
         new_level = ultra_sonic_measure();
         WriteToDatabase("WASSER", "WASSERSTAND after res-pumpe OFF : ", new_level);
@@ -138,31 +141,31 @@ CountDown Pumpen timer and switch off the pumpen if countDown = 0:
 ---------------------------------------------------------------------*/
 void CountDown()
 {
-    if (main_countDown > 0)
+    tnow = getTime();
+
+    st_main_pumpe = digitalRead(DO_PUMPE_MAIN);
+    
+    if (st_main_pumpe == ON)
     {
-        main_countDown--;
-        //WriteToDatabase("COUNTDOWN","Pumpe Main CountDown : ", main_countDown);
-        println("Pumpe Main CountDown : ", main_countDown);
-        if (main_countDown == 0)
-        {
-            WriteToDatabase("COUNTDOWN", "Pumpe Main CountDown expired");
-            switch_pumpe_main(OFF, 0);
-            TankFuellen(LOW_LEVEL_TANKFUELLEN);
-        }
+        println("tsec", tsec);
+        println("tmain stop", tmain_stop);
     }
 
-    if (reserve_countDown > 0)
+    if ((st_main_pumpe == ON) & (tsec > tmain_stop ))
     {
-        reserve_countDown--;
-        //WriteToDatabase("COUNTDOWN","Pumpe Reserve CountDown : ", reserve_countDown);
-        println("Pumpe Reserve CountDown : ", reserve_countDown);
-        if (reserve_countDown == 0)
-        {
-            control.reserve_repetitions++;
-            EEPROM.put(0, control);            
-            WriteToDatabase("COUNTDOWN", "Pumpe Reserve CountDown expired ");
-            switch_pumpe_reserve(OFF, 0);
-        }
+        tmain_stop = 4000;
+        switch_pumpe_main(OFF, 0);
+        TankFuellen(LOW_LEVEL_TANKFUELLEN);
+    }
+
+     st_reserve_pumpe = digitalRead(DO_PUMPE_RESERVE);   
+
+    if ((st_reserve_pumpe == ON) & (tsec > tres_stop))
+    {
+        tres_stop = 4000;
+        control.reserve_repetitions++;
+        EEPROM.put(0, control);            
+        switch_pumpe_reserve(OFF, 0);
     }
 
     if (funk_countDown > 0)

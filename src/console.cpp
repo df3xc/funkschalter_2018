@@ -35,13 +35,9 @@ void dispatchCommand(char c)
     //   break;
 
   case 'i':
-    if (control.pumpe_count_down < 40)
+    if (control.pumpe_count_down < 240)
     {
-      control.pumpe_count_down = control.pumpe_count_down + 4;
-    }
-    else
-    {
-      control.pumpe_count_down = 40;
+      control.pumpe_count_down = control.pumpe_count_down + 10;
     }
 
     EEPROM.put(0, control);
@@ -49,14 +45,11 @@ void dispatchCommand(char c)
     break;
 
   case 'd':
-    if (control.pumpe_count_down > 6)
+    if (control.pumpe_count_down > 10)
     {
-      control.pumpe_count_down = control.pumpe_count_down - 4;
+      control.pumpe_count_down = control.pumpe_count_down - 10;
     }
-    else
-    {
-      control.pumpe_count_down = 6;
-    }
+
     EEPROM.put(0, control);
     WriteToDatabase("control", "PUMPE MAIN COUNTDOWN NOW ", control.pumpe_count_down);
     break;
