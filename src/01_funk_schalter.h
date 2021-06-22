@@ -2,7 +2,7 @@
 #ifndef _funk_x
 #define _funk_x
 
-#define SW_VERSION 20
+#define SW_VERSION 23
 
 #define ON 1
 #define OFF 0
@@ -12,7 +12,7 @@
 #define DONT_SLEEP_PIN D6    // GPIO D6
 #define BLYNK_LED D7
 
-#define TROCKENLAUF_SCHUTZ_LEVEL 70
+#define TROCKENLAUF_SCHUTZ_LEVEL 60
 #define LOW_LEVEL_TANKFUELLEN 95
 #define RESERVE_PUMPE_LAUFZEIT  90
 #define MAX_NACHFUELL_REPETITIONS    5

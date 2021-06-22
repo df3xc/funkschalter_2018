@@ -260,12 +260,14 @@ void loop()
 {
   unsigned long rf_code;
   int minutes;
+  int utime;
 
   Blynk.run();
 
   fast_counter++;
   delay(10);
   tnow = getTime();
+  utime = Time.now();
 
   // this is just to test a huge amout of sleep cycles
 
@@ -274,7 +276,7 @@ void loop()
   //   sleep(1);
   // }
 
-  if ((tsec % 5) == 0) // every 5 seconds
+  if ((utime % 2) == 0) // every 2 seconds
   {
     //WriteToDatabase ( "CONTROL", "counter0 ",slow_counter); 
     //WriteToDatabase ( "CONTROL", "counterF ",fast_counter); 
@@ -286,10 +288,10 @@ void loop()
     {
       sleep(getSleepTime(55));
     }
-    myDelay(2);
+    myDelay(1);
   }
 
-  if ((slow_counter % 11) == 0) // every 60 seconds
+  if ((slow_counter % 30) == 0) // every 60 seconds
   {
     WriteToDatabase ( "CONTROL", "counter1 ",slow_counter);  
     printStatus();
@@ -297,12 +299,13 @@ void loop()
     slow_counter++;
   } 
 
-  if ((slow_counter % 24) == 0) // once per 2 minutes
+  if (slow_counter > 62) // once per 2 minutes
   {
     WriteToDatabase ( "CONTROL", "counter2",slow_counter);   
+    slow_counter = 0;
     printSlowStatus();
 
-    if (tnow > (23*60) + 30)
+    if (tnow > (22*60) + 30)
     {
       done_giessen = 0; // armed for the next day
     }
@@ -404,11 +407,6 @@ void printStatus()
 
   println(" tnow: ", tnow);
 
-  Serial.printf(" ts_giessen: %d ", ts_giessen);
-  println(" tgiessen ",ts_giessen);
-
-  checkDontSleepPin();
-
   readAdcChannels();
   println("Main    [mV] : ", AiPumpeMain);
   println("Reserve [mV] : ", AiPumpeReserve);
@@ -430,7 +428,11 @@ void printStatus()
     WriteToDatabase("STATUS", "RESERVE Pumpe is ON ");
   }
 
-  reportDontSleepPin();
+  if (st_funk_pumpe == ON)
+  {
+    println("FUNK Pumpe ist ON");
+    WriteToDatabase("STATUS", "FUNK Pumpe is ON ");
+  }
 
   Serial.printlnf(" waterlevel: %d ", waterlevel);
   Serial.printlnf(" wifi=%s cloud=%s fast_counter=%d ", (wifiReady ? "on" : "off"), (cloudReady ? "on" : "off"), fast_counter);
@@ -456,6 +458,9 @@ void printSlowStatus()
   Particle.publish("particle/device/name");
   delay(500);
 
+  checkDontSleepPin();
+  reportDontSleepPin();
+
   Particle.publish("waterControl", buffer, PRIVATE);
 
   EEPROM.get(0, control);
@@ -473,7 +478,6 @@ void printSlowStatus()
   waterlevel = ultra_sonic_measure();
   WriteToDatabase("WASSER","WASSERSTAND : ",waterlevel);
 
-  reportDontSleepPin();
   readAdcChannels();
 
   if (AiPumpeMain > 1000)
@@ -912,6 +916,8 @@ BLYNK_WRITE(V14)
     termEnabled = 1;
     println(" Terminal enabled  ");
     termCounter = 10;
+    printSlowStatus();
+    printStatus();
     WriteToDatabase("CONTROL","TERMINAL enabled by Blynk Button");   
   }
 }
@@ -929,7 +935,7 @@ BLYNK_WRITE(V17)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-   switch_pumpe_funk(ON,90); // pumpe ein- oder aus  
+   switch_pumpe_funk(ON,15); // pumpe ein- oder aus  
   }
 }
 

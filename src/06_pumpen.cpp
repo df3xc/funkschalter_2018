@@ -41,7 +41,8 @@ int switch_pumpe_main(int new_state, int laufzeit) // pumpe ein- oder aus
             return (st_main_pumpe);
         }
 
-        main_countDown = laufzeit;
+        tnow = getTime();
+        tmain_stop = tsec + laufzeit;
         digitalWrite(DO_PUMPE_MAIN, 1);
         WriteToDatabase("WASSER", "HAUPT-PUMPE EINGESCHALTET : ", main_countDown);
     }
@@ -91,13 +92,14 @@ int switch_pumpe_reserve(int new_state, int laufzeit)
         WriteToDatabase("WASSER", "WASSERSTAND before res-pumpe ON : ", old_level);
         digitalWrite(DO_PUMPE_RESERVE, 1);
         WriteToDatabase("WASSER", "RESERVE-PUMPE EINGESCHALTET ");
-        reserve_countDown = laufzeit;
-    }
+
+        tnow = getTime();
+        tres_stop = tsec + laufzeit;
+     }
 
     if ((new_state == OFF) & (st_reserve_pumpe == ON))
     {
         digitalWrite(DO_PUMPE_RESERVE, 0);
-        reserve_countDown = 0;
         WriteToDatabase("WASSER", "RESERVE-PUMPE AUSGESCHALTET. FUELLUNG NR. ",control.reserve_repetitions);
         new_level = ultra_sonic_measure();
         WriteToDatabase("WASSER", "WASSERSTAND after res-pumpe OFF : ", new_level);
@@ -132,16 +134,17 @@ int switch_pumpe_funk(int newState, int laufzeit) // pumpe ein- oder aus
 {
     if (newState == ON)
     {
-        conrad_rsl_switch_code(5, EIN); // Dosen-Label RSL3
+        conrad_rsl_switch_code(4, EIN); // Dosen-Label RSL2
         st_funk_pumpe = ON;
-        WriteToDatabase("WASSER", "FUNK-PUMPE RSL3 EINGESCHALTET ");
-        funk_countDown = laufzeit;
+        WriteToDatabase("WASSER", "FUNK-PUMPE RSL2 EINGESCHALTET ");
+        tfunk_stop = tsec + laufzeit;
     }
     else
     {
-        conrad_rsl_switch_code(5, AUS); // Dosen-Label RSL3
+        conrad_rsl_switch_code(4, AUS); // Dosen-Label RSL2
         st_funk_pumpe = OFF;
-        WriteToDatabase("WASSER", "FUNK-PUMPE RSL3 AUSGESCHALTET ");
+        tfunk_stop = 4000;
+        WriteToDatabase("WASSER", "FUNK-PUMPE RSL2 AUSGESCHALTET ");
     }
     return (newState);
 }
@@ -153,43 +156,36 @@ void CountDown()
 {
     tnow = getTime();
 
-    if (tsec  > tmain_stop )
+    st_main_pumpe = digitalRead(DO_PUMPE_MAIN);
+    
+    if (st_main_pumpe == ON)
     {
-        main_countDown--;
-        //WriteToDatabase("COUNTDOWN","Pumpe Main CountDown : ", main_countDown);
-        println("Pumpe Main CountDown : ", main_countDown);
-        if (main_countDown == 0)
-        {
-            WriteToDatabase("COUNTDOWN", "tsec > tstop. ");
-            switch_pumpe_main(OFF, 0);
-            TankFuellen(LOW_LEVEL_TANKFUELLEN);
-        }
+        println("tsec", tsec);
+        println("tmain stop", tmain_stop);
     }
 
-    if (reserve_countDown > 0)
+    if ((st_main_pumpe == ON) & (tsec > tmain_stop ))
     {
-        reserve_countDown--;
-        //WriteToDatabase("COUNTDOWN","Pumpe Reserve CountDown : ", reserve_countDown);
-        println("Pumpe Reserve CountDown : ", reserve_countDown);
-        if (reserve_countDown == 0)
-        {
-            control.reserve_repetitions++;
-            EEPROM.put(0, control);            
-            WriteToDatabase("COUNTDOWN", "Pumpe Reserve CountDown expired ");
-            switch_pumpe_reserve(OFF, 0);
-        }
+        tmain_stop = 4000;
+        switch_pumpe_main(OFF, 0);
+        TankFuellen(LOW_LEVEL_TANKFUELLEN);
     }
 
-    if (funk_countDown > 0)
+     st_reserve_pumpe = digitalRead(DO_PUMPE_RESERVE);   
+
+    if ((st_reserve_pumpe == ON) & (tsec > tres_stop))
     {
-        funk_countDown--;
+        tres_stop = 4000;
+        control.reserve_repetitions++;
+        EEPROM.put(0, control);            
+        switch_pumpe_reserve(OFF, 0);
+    }
+
+    if ((st_funk_pumpe == ON) & (tsec > tfunk_stop ))
+    {
+        tfunk_stop = 4000;
         //WriteToDatabase("COUNTDOWN","Pumpe Funk CountDown : ", funk_countDown);
-        println("Pumpe Funk CountDown : ", funk_countDown);
-        if (funk_countDown == 0)
-        {
-            WriteToDatabase("COUNTDOWN", "Pumpe Funk CountDown expired ");
-            switch_pumpe_funk(OFF, 0);
-        }
+        switch_pumpe_funk(OFF, 0);
     }
 }
 
@@ -201,9 +197,8 @@ done_giessen muß 0 sein
 ---------------------------------------------------------------------*/
 void BlumenGiessen(int now, int ts)
 {
-    
-    if ((now=0) & (done_giessen == 1)) 
-     return;
+   
+    if (done_giessen == 1) return;
     
     if (tnow == ts || now == 1)
     {
@@ -216,14 +211,16 @@ void BlumenGiessen(int now, int ts)
 
         st_main_pumpe = switch_pumpe_main(ON, control.pumpe_count_down);
 
-        if (st_funk_pumpe == OFF)
-        {
-            st_funk_pumpe = switch_pumpe_funk(OFF, 0);
-            delay(1000);
-            st_funk_pumpe = switch_pumpe_funk(ON, 12);
+        // Blaue COMET Pumpe, 3 dünne Schläuche , Verteiler Typ "3"
+        // 150 sekunden laufzeit ergibt 0.5L
 
-        }
-    done_giessen = 1;
+        // BLaue Comet Pumpe, 4mm Schlauch, ohne Verteiler
+        // 10 Sekunden ergibt 0.5L
+
+        st_funk_pumpe = switch_pumpe_funk(OFF,0);
+        delay(1000);
+        st_funk_pumpe = switch_pumpe_funk(ON, 10);
+        done_giessen = 1;
     }
 }
 

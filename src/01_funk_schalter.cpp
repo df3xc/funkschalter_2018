@@ -11,6 +11,7 @@
 ---------------------------------------------------------------------*/
 void setup();
 void sleep(int minutes);
+void myDelay ( int seconds);
 void loop();
 void run_blynk();
 int getTime();
@@ -51,7 +52,6 @@ void println(char *text, String data);
 #include "01_funk_schalter.h"
 #include "ds18x20_temperature.h"
 #include "console.h"
-#include "particle.h"
 
 
 SYSTEM_MODE(MANUAL);
@@ -71,12 +71,17 @@ int waterlevel = 1000;
 int old_level = 0;
 int new_level = 0;
 
-int fast_counter = 0; // used by LOOP
-//int slow_counter = 0;     // used by LOOP to trigger slow actions
+int fast_counter = 0;  // used by LOOP
+int slow_counter = 0;  // used by LOOP to trigger slow actions
 
-int tnow; // Uhrzeit in Minuten (24*hour+minute)#
+int tnow;  // Uhrzeit in Minuten (24*hour+minute)
+int tsec;  // minuten * 60 + sekunden
+int t10sec; // minuten * 60 + (sekunden/10);
+int tmain_stop;  // minuten * 60 + sekunden
+int tres_stop;   // minuten * 60 + sekunden
+int tfunk_stop;  // minuten * 60 + sekunden
 
-int ts_giessen = 0; // Uhrzeit Wasserpumpe einschalten
+int ts_giessen = 8 * 60 + 1; // Uhrzeit Wasserpumpe einschalten
 int done_giessen = 0;
 
 int st_main_pumpe = 0;    // status Haupt-Wasserpumpe
@@ -91,7 +96,6 @@ unsigned int AiPumpeMain = 0;
 unsigned int AiPumpeReserve = 0;
 unsigned int Ai12V = 0;
 
-//int level = 0;
 
 int termEnabled = 0;
 int termCounter = 0;
@@ -124,8 +128,17 @@ void setup()
   hwID = System.deviceID();
   Serial.printlnf(hwID);
 
-  wifi_on();
+  WiFi.on();
+  delay(3000);
   Particle.connect();
+
+  //   if (wifi_on()==true) 
+  // {
+  //   Serial.printlnf(" WIFI is on. Now connecting to cloud");  
+  //   Particle.connect();
+  //  }
+
+  delay(3000);
 
     if (Particle.connected() == true)
     {
@@ -139,17 +152,16 @@ void setup()
 
   Blynk.begin(auth);
 
-
-// TODO: use SW version as define 
+  delay(3000);
 
   WriteToDatabase("RESET", "#### SETUP/RESET Version ",SW_VERSION);
   hwInit();
 
   EEPROM.get(0, control);
 
-  if ((control.pumpe_count_down < 4) | (control.pumpe_count_down > 40))
+  if ((control.pumpe_count_down < 30) | (control.pumpe_count_down > 240))
   {
-    control.pumpe_count_down = 16;
+    control.pumpe_count_down = 90;
     EEPROM.put(0, control);
   }
 
@@ -195,7 +207,11 @@ void sleep(int minutes)
     st_reserve_pumpe = switch_pumpe_reserve(OFF, 0);
     st_funk_pumpe = switch_pumpe_funk(OFF, 0);
 
+    digitalWrite(DO_PUMPE_MAIN, 0);
+    digitalWrite(DO_PUMPE_RESERVE, 0);
+    conrad_rsl_switch_code(5, AUS); // Dosen-Label RSL3
     delay(1000);
+    conrad_rsl_switch_code(5, AUS); // Dosen-Label RSL3 
     WriteToDatabase("WASSER", "#### SLEEP Minutes #### : ", minutes);
     delay(1000);
 
@@ -207,8 +223,10 @@ void sleep(int minutes)
 
     println(" *** WAKE UP *** ");
 
-    wifi_on();
+    WiFi.on();
+    delay(5000);
     Particle.connect(); 
+    delay(3000);
 
     if (Particle.connected() == true)
     {
@@ -229,9 +247,9 @@ void sleep(int minutes)
     hwInit();
 
     EEPROM.get(0, control);
-    if ((control.pumpe_count_down < 4) | (control.pumpe_count_down > 40))
+    if ((control.pumpe_count_down < 30) | (control.pumpe_count_down > 240))
     {
-      control.pumpe_count_down = 16;
+      control.pumpe_count_down = 90;
       EEPROM.put(0, control);
     }
 
@@ -250,8 +268,19 @@ void sleep(int minutes)
       TankFuellen(LOW_LEVEL_TANKFUELLEN);
     }
 
-    fast_counter = 60000;
+    slow_counter = 0;
+    fast_counter = 0;
     termEnabled = 0;
+  }
+}
+
+void myDelay ( int seconds)
+
+{
+for (int i = 0; i<(20*seconds); i++)
+  {
+    delay(50);
+    Blynk.run();  
   }
 }
 
@@ -266,6 +295,8 @@ void loop()
   Blynk.run();
 
   fast_counter++;
+  delay(10);
+  tnow = getTime();
 
   // this is just to test a huge amout of sleep cycles
 
@@ -274,29 +305,32 @@ void loop()
   //   sleep(1);
   // }
 
-  if ((fast_counter % 1600) == 0) // every 5 seconds
+  if ((tsec % 3) == 0) // every 3 seconds
   {
+    //WriteToDatabase ( "CONTROL", "counter0 ",slow_counter); 
+    //WriteToDatabase ( "CONTROL", "counterF ",fast_counter); 
+    slow_counter++; 
+    BlumenGiessen(0, ts_giessen);    
     CountDown();
 
-    // wir schlafen bis zur nächsten Stunde
-    if (Time.minute() == 10)
+    if (Time.minute() == 10)     // wir schlafen bis zur nächsten Stunde
     {
       sleep(getSleepTime(55));
     }
+    myDelay(2);
   }
 
-  if ((fast_counter % 5100) == 0) // every 15 seconds
+  if ((slow_counter % 20) == 0) // every 60 seconds
   {
-    tnow = getTime();
-    //WriteToDatabase ( "CONTROL", "FASTCOUNTER");
+    WriteToDatabase ( "CONTROL", "counter1 ",slow_counter);  
     printStatus();
     dontSleepHW = checkDontSleepPin();
-    BlumenGiessen(0, ts_giessen);
+    slow_counter++;
+  } 
 
-  } // if fast_counter
-
-  if ((fast_counter % 80000) == 0) // once per 4 minutes
+  if ((slow_counter % 42) == 0) // once per 2 minutes
   {
+    WriteToDatabase ( "CONTROL", "counter2",slow_counter);   
     printSlowStatus();
 
     if (tnow > (23*60) + 30)
@@ -314,9 +348,10 @@ void loop()
         WriteToDatabase("CONTROL","TERMINAL disabled by timeout");
       }
     }
+    slow_counter++;
+
   }
-
-
+ 
 } // loop
 
 /*
@@ -332,6 +367,8 @@ void run_blynk()
 */
 int getTime()
 {
+  tsec = 60 * Time.minute() + Time.second();  
+  t10sec = 60 * Time.minute() + (Time.second()/10); 
   return (Time.hour() * 60 + Time.minute());
 }
 
@@ -413,6 +450,7 @@ void printStatus()
   if (st_main_pumpe == HIGH)
   {
     println("MAIN Pumpe is ON");
+    WriteToDatabase("STATUS", "MAIN Pumpe is ON ");
   }
 
   st_reserve_pumpe = digitalRead(DO_PUMPE_RESERVE);
@@ -420,7 +458,10 @@ void printStatus()
   if (st_reserve_pumpe == HIGH)
   {
     println("RESERVE Pumpe ist ON");
+    WriteToDatabase("STATUS", "RESERVE Pumpe is ON ");
   }
+
+  reportDontSleepPin();
 
   Serial.printlnf(" waterlevel: %d ", waterlevel);
   Serial.printlnf(" wifi=%s cloud=%s fast_counter=%d ", (wifiReady ? "on" : "off"), (cloudReady ? "on" : "off"), fast_counter);
@@ -516,7 +557,7 @@ void hwInit()
 
   EEPROM.get(0, control);
 
-  ts_giessen = 7 * 60 + 1; // zu dieser Zeit wird die Wasserpumpe eingeschaltet
+  ts_giessen = 8 * 60 + 1; // zu dieser Zeit wird die Wasserpumpe eingeschaltet
 
   done_giessen = 0;
 }
@@ -903,6 +944,23 @@ BLYNK_WRITE(V14)
     println(" Terminal enabled  ");
     termCounter = 10;
     WriteToDatabase("CONTROL","TERMINAL enabled by Blynk Button");   
+  }
+}
+
+
+BLYNK_WRITE(V16)
+{
+  if (param.asInt() == 1) // Schalter nieder gedrückt ?
+  {
+   switch_pumpe_funk(OFF,0); // pumpe ein- oder aus  
+  }
+}
+
+BLYNK_WRITE(V17)
+{
+  if (param.asInt() == 1) // Schalter nieder gedrückt ?
+  {
+   switch_pumpe_funk(ON,10); // pumpe ein- oder aus  
   }
 }
 

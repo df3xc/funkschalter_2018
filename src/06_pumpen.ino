@@ -184,7 +184,8 @@ done_giessen muß 0 sein
 ---------------------------------------------------------------------*/
 void BlumenGiessen(int now, int ts)
 {
-   
+    int day = 0;
+
     if (done_giessen == 1) return;
     
     if (tnow == ts || now == 1)
@@ -201,9 +202,17 @@ void BlumenGiessen(int now, int ts)
         // Blaue COMET Pumpe, 3 dünne Schläuche , Verteiler Typ "3"
         // 150 sekunden laufzeit ergibt 0.5L
 
-        st_funk_pumpe = switch_pumpe_funk(OFF,0);
-        delay(1000);
-        st_funk_pumpe = switch_pumpe_funk(ON, 150);
+        // BLaue Comet Pumpe, 4mm Schlauch, ohne Verteiler
+        // 10 Sekunden ergibt 0.5L
+
+        day = Time.weekday(); // North American implementation : Sunday is day number one, Monday is day numer two
+
+        if ( (day %2) == 0) // Monday, Wednesday, Friday, Sunday 
+        {
+            st_funk_pumpe = switch_pumpe_funk(OFF,0);
+            delay(1000);
+            st_funk_pumpe = switch_pumpe_funk(ON, 10);
+        }
         done_giessen = 1;
     }
 }
