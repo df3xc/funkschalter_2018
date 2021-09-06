@@ -7,7 +7,7 @@
 #define TankHoehe 360  // Höhe Sensor über dem Grund des Behälters in mm
 #define MessFehler 15  // distanz ist um 15 mm zu groß
 
-#define ULTRA_LOOP 3
+#define ULTRA_LOOP 5
 // array used to store up ultrasonic measurements
 uint32_t hs[ULTRA_LOOP];
 

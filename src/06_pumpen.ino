@@ -121,14 +121,14 @@ int switch_pumpe_funk(int newState, int laufzeit) // pumpe ein- oder aus
 {
     if (newState == ON)
     {
-        conrad_rsl_switch_code(4, EIN); // Dosen-Label RSL2
+        conrad_rsl_switch_code(RSL2, EIN); // Dosen-Label RSL2
         st_funk_pumpe = ON;
         WriteToDatabase("WASSER", "FUNK-PUMPE RSL2 EINGESCHALTET ");
         tfunk_stop = tsec + laufzeit;
     }
     else
     {
-        conrad_rsl_switch_code(4, AUS); // Dosen-Label RSL2
+        conrad_rsl_switch_code(RSL2, AUS); // Dosen-Label RSL2
         st_funk_pumpe = OFF;
         tfunk_stop = 4000;
         WriteToDatabase("WASSER", "FUNK-PUMPE RSL2 AUSGESCHALTET ");

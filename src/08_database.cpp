@@ -19,7 +19,7 @@ void WriteToDatabase ( char* status,  char* option)
     Serial.printlnf(buffer);
     Particle.publish("wasserstand", buffer, PRIVATE);
     println(option);
-    delay(200);
+    delay(2000);
 }
 
 
@@ -43,7 +43,7 @@ void WriteToDatabase ( char* status,  char* option, int data)
     Particle.publish("wasserstand", buffer, PRIVATE);
     sprintf(buffer," %s %d ", option, data);
     println(option,data);
-    delay(200);
+    delay(2000);
 }
 
 

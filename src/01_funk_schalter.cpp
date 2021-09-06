@@ -11,9 +11,9 @@
 ---------------------------------------------------------------------*/
 void setup();
 void sleep(int minutes);
-void myDelay ( int seconds);
 void loop();
 void run_blynk();
+void myDelay ( int seconds);
 int getTime();
 void printTnow(int tnow);
 int getSleepTime(int target);
@@ -74,12 +74,11 @@ int new_level = 0;
 int fast_counter = 0;  // used by LOOP
 int slow_counter = 0;  // used by LOOP to trigger slow actions
 
-int tnow;  // Uhrzeit in Minuten (24*hour+minute)
-int tsec;  // minuten * 60 + sekunden
-int t10sec; // minuten * 60 + (sekunden/10);
-int tmain_stop;  // minuten * 60 + sekunden
-int tres_stop;   // minuten * 60 + sekunden
-int tfunk_stop;  // minuten * 60 + sekunden
+int tnow;        // Uhrzeit in Minuten (24*hour+minute)
+int tsec;        // sekunden
+int tmain_stop;  // sekunden bis hauptpumpe abschaltet wird
+int tres_stop;   // sekunden bis reserve pumpe abschaltet wird
+int tfunk_stop;  // sekunden bis funk pumpe abgeschaltet wird
 
 int ts_giessen = 8 * 60 + 1; // Uhrzeit Wasserpumpe einschalten
 int done_giessen = 0;
@@ -140,7 +139,7 @@ void setup()
 
   delay(3000);
 
-    if (Particle.connected() == true)
+  if (Particle.connected() == true)
     {
     Particle.subscribe("particle/device/name", deviceNameHandler);
     Particle.publish("particle/device/name");
@@ -171,6 +170,8 @@ void setup()
   {
     WriteToDatabase("RESET", "WASSERSTAND : BLUMEN GIESSEN IST DEAKTIVIERT ");
   }
+
+  printSlowStatus();
 
   help();
 
@@ -263,6 +264,8 @@ void sleep(int minutes)
     sprintf(timebuffer, "TEMP IN:%d OUT:%d", temp_in, temp_out);
     WriteToDatabase("WAKE UP", timebuffer);
 
+    printSlowStatus();
+
     if ((Time.hour()>8) & (Time.hour()<11))
     {
       TankFuellen(LOW_LEVEL_TANKFUELLEN);
@@ -274,16 +277,6 @@ void sleep(int minutes)
   }
 }
 
-void myDelay ( int seconds)
-
-{
-for (int i = 0; i<(20*seconds); i++)
-  {
-    delay(50);
-    Blynk.run();  
-  }
-}
-
 /*---------------------------------------------------------------------
 The main loop runs forever
 ---------------------------------------------------------------------*/
@@ -291,12 +284,14 @@ void loop()
 {
   unsigned long rf_code;
   int minutes;
+  int utime;
 
   Blynk.run();
 
   fast_counter++;
   delay(10);
   tnow = getTime();
+  utime = Time.now();
 
   // this is just to test a huge amout of sleep cycles
 
@@ -305,35 +300,42 @@ void loop()
   //   sleep(1);
   // }
 
-  if ((tsec % 3) == 0) // every 3 seconds
+  if ((utime % 2) == 0) // every 2 seconds
   {
-    //WriteToDatabase ( "CONTROL", "counter0 ",slow_counter); 
-    //WriteToDatabase ( "CONTROL", "counterF ",fast_counter); 
     slow_counter++; 
     BlumenGiessen(0, ts_giessen);    
     CountDown();
 
     if (Time.minute() == 10)     // wir schlafen bis zur nächsten Stunde
     {
-      sleep(getSleepTime(55));
+      if ((Time.hour() > 9) | (Time.hour() < 5))
+      {
+        sleep(60+getSleepTime(55));
+      }
+      else
+      {
+        sleep(getSleepTime(55));
+      }
     }
-    myDelay(2);
+    myDelay(1);
   }
 
-  if ((slow_counter % 20) == 0) // every 60 seconds
+  if ((slow_counter % 10) == 0) // every 20 seconds
   {
-    WriteToDatabase ( "CONTROL", "counter1 ",slow_counter);  
+    //WriteToDatabase ( "CONTROL", "counter1 ",slow_counter);  
     printStatus();
     dontSleepHW = checkDontSleepPin();
+
     slow_counter++;
   } 
 
-  if ((slow_counter % 42) == 0) // once per 2 minutes
+  if (slow_counter > 300) // once per 10 minutes
   {
-    WriteToDatabase ( "CONTROL", "counter2",slow_counter);   
+
+    slow_counter = 0;
     printSlowStatus();
 
-    if (tnow > (23*60) + 30)
+    if (tnow > (22*60) + 30)
     {
       done_giessen = 0; // armed for the next day
     }
@@ -348,8 +350,6 @@ void loop()
         WriteToDatabase("CONTROL","TERMINAL disabled by timeout");
       }
     }
-    slow_counter++;
-
   }
  
 } // loop
@@ -362,13 +362,22 @@ void run_blynk()
   Blynk.run();
 }
 
+void myDelay ( int seconds)
+{
+for (int i = 0; i<(20*seconds); i++)
+  {
+    delay(50);
+    Blynk.run();  
+  }
+}
+
+
 /*
 * Return time as "minutes of day" = 60*hour + minutes
 */
 int getTime()
 {
   tsec = 60 * Time.minute() + Time.second();  
-  t10sec = 60 * Time.minute() + (Time.second()/10); 
   return (Time.hour() * 60 + Time.minute());
 }
 
@@ -435,15 +444,22 @@ void printStatus()
 
   println(" tnow: ", tnow);
 
-  Serial.printf(" ts_giessen: %d ", ts_giessen);
-  println(" tgiessen ",ts_giessen);
-
-  checkDontSleepPin();
-
   readAdcChannels();
   println("Main    [mV] : ", AiPumpeMain);
   println("Reserve [mV] : ", AiPumpeReserve);
   println("12V     [mV] : ", Ai12V);
+
+   if (AiPumpeMain > 1000)
+    {
+      Serial.printlnf(" AiPumpeMain    : %d [mV]", AiPumpeMain);
+      WriteToDatabase("ADC", "AiPumpeMain    [mV] : ", AiPumpeMain);
+    }
+
+  if (AiPumpeReserve > 1000)
+    {
+      Serial.printlnf(" AiPumpeReserve : %d [mV]", AiPumpeReserve);
+      WriteToDatabase("ADC", "AiPumpeReserve [mV] : ", AiPumpeReserve);
+    }  
 
   st_main_pumpe = digitalRead(DO_PUMPE_MAIN);
 
@@ -461,7 +477,11 @@ void printStatus()
     WriteToDatabase("STATUS", "RESERVE Pumpe is ON ");
   }
 
-  reportDontSleepPin();
+  if (st_funk_pumpe == ON)
+  {
+    println("FUNK Pumpe ist ON");
+    WriteToDatabase("STATUS", "FUNK Pumpe is ON ");
+  }
 
   Serial.printlnf(" waterlevel: %d ", waterlevel);
   Serial.printlnf(" wifi=%s cloud=%s fast_counter=%d ", (wifiReady ? "on" : "off"), (cloudReady ? "on" : "off"), fast_counter);
@@ -487,6 +507,9 @@ void printSlowStatus()
   Particle.publish("particle/device/name");
   delay(500);
 
+  checkDontSleepPin();
+  reportDontSleepPin();
+
   Particle.publish("waterControl", buffer, PRIVATE);
 
   EEPROM.get(0, control);
@@ -504,22 +527,7 @@ void printSlowStatus()
   waterlevel = ultra_sonic_measure();
   WriteToDatabase("WASSER","WASSERSTAND : ",waterlevel);
 
-  reportDontSleepPin();
-  readAdcChannels();
-
-  if (AiPumpeMain > 1000)
-  {
-    Serial.printlnf(" AiPumpeMain    : %d [mV]", AiPumpeMain);
-    WriteToDatabase("ADC", "AiPumpeMain    [mV] : ", AiPumpeMain);
-  }
-
-  if (AiPumpeReserve > 1000)
-  {
-    Serial.printlnf(" AiPumpeReserve : %d [mV]", AiPumpeReserve);
-    WriteToDatabase("ADC", "AiPumpeReserve [mV] : ", AiPumpeReserve);
-  }
-
-  if (control.dontGiessen == 1)
+   if (control.dontGiessen == 1)
   {
     WriteToDatabase("WASSER", "WASSERSTAND : BLUMEN GIESSEN IST DEAKTIVIERT ");
   }
@@ -595,19 +603,22 @@ void myWebHookHandler(const char *event, const char *data)
 report to database if DontSleepPin is set
 ---------------------------------------------------------------------*/
 int reportDontSleepPin()
-
 {
+  int dontSleep = 0;
+
   if (digitalRead(DONT_SLEEP_PIN) == HIGH)
   {
     dontSleepHW = 1;
+    dontSleep = 1;
     WriteToDatabase("CONTROL", "SLEEP disabled by HW pin ");
   }
 
   if (control.dontSleepSW == 1)
   {
+    dontSleep = 1;
     WriteToDatabase("CONTROL", "SLEEP disabled by SW ");
   }
-  return (dontSleepHW);
+  return (dontSleep);
 }
 
 /*---------------------------------------------------------------------
@@ -802,8 +813,8 @@ BLYNK_WRITE(V1)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-    println(" rsl 1 ein ");
-    conrad_rsl_switch_code(1, EIN);
+    println(" rsl 9 ein ");
+    conrad_rsl_switch_code(9, EIN);
     Blynk.virtualWrite(V1, 255);
   }
 }
@@ -812,8 +823,8 @@ BLYNK_WRITE(V2)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-    println(" rsl 1 aus ");
-    conrad_rsl_switch_code(1, AUS);
+    println(" rsl 9 aus ");
+    conrad_rsl_switch_code(9, AUS);
     Blynk.virtualWrite(V2, 255);
   }
 }
@@ -822,8 +833,8 @@ BLYNK_WRITE(V3)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-    println(" rsl 2 ein ");
-    conrad_rsl_switch_code(2, EIN);
+    println(" rsl 8 ein ");
+    conrad_rsl_switch_code(8, EIN);
     Blynk.virtualWrite(V20, 255);
   }
 }
@@ -833,8 +844,8 @@ BLYNK_WRITE(V4)
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
     timeStamp();
-    println(" rsl 2 aus ");
-    conrad_rsl_switch_code(2, AUS);
+    println(" rsl 8 aus ");
+    conrad_rsl_switch_code(8, AUS);
     Blynk.virtualWrite(V20, 0);
   }
 }
@@ -843,8 +854,8 @@ BLYNK_WRITE(V5)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-    println(" rsl 3 ein ");
-    conrad_rsl_switch_code(3, EIN);
+    println(" rsl 1 ein ");
+    conrad_rsl_switch_code(RSL1, EIN);
     Blynk.virtualWrite(V20, 255);
   }
 }
@@ -853,13 +864,13 @@ BLYNK_WRITE(V6)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-    println(" rsl 3 aus ");
-    conrad_rsl_switch_code(3, AUS);
+    println(" rsl 1 aus ");
+    conrad_rsl_switch_code(RSL1, AUS);
     Blynk.virtualWrite(V20, 0);
   }
 }
 
-BLYNK_WRITE(V7)
+BLYNK_WRITE(V7) // Blumen giessen
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
@@ -885,8 +896,8 @@ BLYNK_WRITE(V9)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-    println(" rsl 5 ein ");
-    conrad_rsl_switch_code(5, EIN);
+    println(" rsl 3 ein ");
+    conrad_rsl_switch_code(RSL3, EIN);
     Blynk.virtualWrite(V20, 255);
   }
 }
@@ -895,8 +906,8 @@ BLYNK_WRITE(V10)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-    println(" rsl 5 aus ");
-    conrad_rsl_switch_code(5, AUS);
+    println(" rsl 3 aus ");
+    conrad_rsl_switch_code(RSL3, AUS);
     Blynk.virtualWrite(V20, 0);
   }
 }
@@ -936,14 +947,17 @@ BLYNK_WRITE(V13)
   }
 }
 
-BLYNK_WRITE(V14)
+BLYNK_WRITE(V14) // enable terminal and print status
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
     termEnabled = 1;
     println(" Terminal enabled  ");
-    termCounter = 10;
-    WriteToDatabase("CONTROL","TERMINAL enabled by Blynk Button");   
+    WriteToDatabase("CONTROL","TERMINAL enabled by Blynk Button");    
+    termCounter = 3;
+    printSlowStatus();
+    printStatus();
+   
   }
 }
 
@@ -952,7 +966,7 @@ BLYNK_WRITE(V16)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-   switch_pumpe_funk(OFF,0); // pumpe ein- oder aus  
+   switch_pumpe_funk(OFF,0); // pumpe aus  
   }
 }
 
@@ -960,7 +974,7 @@ BLYNK_WRITE(V17)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
-   switch_pumpe_funk(ON,10); // pumpe ein- oder aus  
+   switch_pumpe_funk(ON,15); // pumpe ein  
   }
 }
 
@@ -990,9 +1004,10 @@ BLYNK_WRITE(V27)
 {
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
+    WriteToDatabase("CONTROL", "Tankfuellen gestartet by BLYNK button ");   
     TankFuellen(250);
-    WriteToDatabase("CONTROL", "Tankfuellen by BLYNK button ");
-    println(" Reserve Pumpe eingeschaltet by button  ");
+
+    println(" Tank fuellen by BLYNK button  ");
   }
 }
 
@@ -1033,8 +1048,8 @@ BLYNK_WRITE(V31)
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
     st_main_pumpe = switch_pumpe_main(ON, control.pumpe_count_down);
-    WriteToDatabase("CONTROL", "Main Pumpe by button ");
-    println(" Main Pumpe eingeschaltet by button  ");
+    WriteToDatabase("CONTROL", "Main Pumpe eingeschaltet by BLYNK by button ");
+    println(" Main Pumpe eingeschaltet by BLYNK button  ");
   }
 }
 
@@ -1043,8 +1058,8 @@ BLYNK_WRITE(V32)
   if (param.asInt() == 1) // Schalter nieder gedrückt ?
   {
     st_main_pumpe = switch_pumpe_main(OFF, 0);
-    WriteToDatabase("CONTROL", "Main Pumpe ausgeschaltet by button ");
-    println(" Main Pumpe ausgeschaltet by button ");
+    WriteToDatabase("CONTROL", "Main Pumpe ausgeschaltet by BLYNK button ");
+    println(" Main Pumpe ausgeschaltet by BLYNK button ");
   }
 }
 

@@ -16,19 +16,44 @@ Die Tabelle (ein zwei-dimensionales array) codes:
 Erste Spalte  : Codes zum ausschalten
 Zweite Spalte : Codes zum einschalten
 --------------------------------------------------------------------*/
-unsigned int codes[2][6] = {
-  { 0,
-    352633047,    // ID 1 : Wandschalter links aus
-    218415319,    // ID 2 : Wandschalter rechts aus
-    29369856,     // ID 3 : RSL1 : Fernbedienung  #1520000979 Gruppe 1 Taster 1 aus
-    784344576,    // ID 4 : RSL2 : Fernbedienung  #1520000979 Gruppe 1 Taster 2 aus
-    515909120 },  // ID 5 : RSL3 : Fernbedienung  #1520000979 Gruppe 1 Taster 3 aus
-  { 0,
-    419741911,    // ID 1 : Wandschalter links ein
-    84197591,     // ID 2 : Wandschalter rechts ein
-    247473664,    // ID 3 : RSL1 : Fernbedienung  #1520000979 Gruppe 1 Taster 1 ein
-    650126848,    // ID 4 : RSL2 :  Fernbedienung #1520000979 Gruppe 1 Taster 2 ein
-    381691392 }   // ID 5 : RSL3 : Fernbedienung  #1520000979 Gruppe 1 Taster 3 ein
+// unsigned int codes[2][6] = {
+//   { 0,
+//     352633047,    // ID 1 : Wandschalter links aus
+//     218415319,    // ID 2 : Wandschalter rechts aus
+//     29369856,     // ID 3 : RSL1 : Fernbedienung  #1520000979 Gruppe 1 Taster 1 aus
+//     784344576,    // ID 4 : RSL2 : Fernbedienung  #1520000979 Gruppe 1 Taster 2 aus
+//     515909120 },  // ID 5 : RSL3 : Fernbedienung  #1520000979 Gruppe 1 Taster 3 aus
+//   { 0,
+//     419741911,    // ID 1 : Wandschalter links ein
+//     84197591,     // ID 2 : Wandschalter rechts ein
+//     247473664,    // ID 3 : RSL1 : Fernbedienung  #1520000979 Gruppe 1 Taster 1 ein
+//     650126848,    // ID 4 : RSL2 :  Fernbedienung #1520000979 Gruppe 1 Taster 2 ein
+//     381691392 }   // ID 5 : RSL3 : Fernbedienung  #1520000979 Gruppe 1 Taster 3 ein
+// };
+
+unsigned int codes[2][10] = {
+	{ 0,          // erste Spalte
+  2176853504,   // RSL1 Fernbedienung  #1520000979 Gruppe 1 Taster 1 aus
+	2931828224,   // RSL2 Fernbedienung  #1520000979 Gruppe 1 Taster 2 aus
+	2663392768,   // RSL3 Fernbedienung  #1520000979 Gruppe 1 Taster 3 aus
+	2378180096,   // RSL4 Fernbedienung  #1520000979 Gruppe 2 Taster 1 aus
+	2780833280,   // RSL5 Fernbedienung  #1520000979 Gruppe 2 Taster 2 aus
+	2512397824,   // RSL6 Fernbedienung  #1520000979 Gruppe 2 Taster 3 aus	
+	2747278848,   // RSL4,5,6 Fernbedienung  #1520000979 alle Dosen aller Gruppen aus
+	2167330816,   // Luefter Dusche Fernbedienung  #1909000183 Gruppe 1 Taster 1 aus LUEFTER DUSCHE
+  2922305536    // Licht Dusche Fernbedienung  #1909000183 Gruppe 1 Taster 2 aus LICHT DUSCHE
+	},  
+	{ 0,          // zweite Spalte
+	2394957312,   // RSL1 Fernbedienung  #1520000979 Gruppe 1 Taster 1 ein
+	2797610496,   // RSL2 Fernbedienung  #1520000979 Gruppe 1 Taster 2 ein
+	2529175040,   // RSL3 Fernbedienung  #1520000979 Gruppe 1 Taster 3 ein 
+	2243962368,   // RSL4 Fernbedienung  #1520000979 Gruppe 2 Taster 1 ein
+	2847942144,   // RSL5 Fernbedienung  #1520000979 Gruppe 2 Taster 2 ein
+	2579506688,   // RSL6 Fernbedienung  #1520000979 Gruppe 2 Taster 3 ein 
+  2478843392,   // RSL 4,5,6 Fernbedienung  #1520000979 alle Dosen aller Gruppen ein
+	2385434624,   // Luefter Dusche Fernbedienung  #1909000183 Gruppe 1 Taster 1 ein LUEFTER DUSCHE
+	2788087808    // Licht Dusche Fernbedienung  #1909000183 Gruppe 1 Taster 2 ein LICHT DUSCHE
+	}   
 };
 
 
@@ -173,7 +198,7 @@ The next value sets transmitter pin HIGH
 
     unsigned int code = 0;
 
-    if (which>5)
+    if (which>11)
     {
       Serial.println(" ERROR which not valid ");
     }

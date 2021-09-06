@@ -53,6 +53,13 @@ Author : Dein grosser Bruder in Stuttgart
 #define EIN 1
 #define AUS 0
 
+#define RSL1 1
+#define RSL2 2
+#define RSL3 3
+#define RSL4 4
+#define RSL5 5
+#define RSL6 6
+
 extern void conrad_rsl_init();
 extern void conrad_rsl_switch ( int which, int state );
 extern void conrad_rsl_switch_code ( int which, int state );

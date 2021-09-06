@@ -2,7 +2,7 @@
     "cortex-debug.openocdPath": "${command:particle.getDebuggerOpenocdPath}",
     "C_Cpp.default.configurationProvider": "particle.particle-vscode-core",
     "particle.targetDevice": "doctor_water",
-    "particle.firmwareVersion": "3.0.0",
+    "particle.firmwareVersion": "3.1.0",
     "particle.targetPlatform": "photon",
     "files.associations": {
         "*.txt": "cpp",

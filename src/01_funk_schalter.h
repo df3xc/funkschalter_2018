@@ -2,7 +2,7 @@
 #ifndef _funk_x
 #define _funk_x
 
-#define SW_VERSION 23
+#define SW_VERSION 26
 
 #define ON 1
 #define OFF 0
@@ -12,10 +12,10 @@
 #define DONT_SLEEP_PIN D6    // GPIO D6
 #define BLYNK_LED D7
 
-#define TROCKENLAUF_SCHUTZ_LEVEL 60
-#define LOW_LEVEL_TANKFUELLEN 95
-#define RESERVE_PUMPE_LAUFZEIT  90
-#define MAX_NACHFUELL_REPETITIONS    5
+#define TROCKENLAUF_SCHUTZ_LEVEL 60     // [mm] unterhalb dieses Pegels wird nicht mehr gegossenn
+#define LOW_LEVEL_TANKFUELLEN 95        // [mm] unterhalb dieses Pegels wird die Reserve Pumpe eingeschaltet
+#define RESERVE_PUMPE_LAUFZEIT  90      // sekunden
+#define MAX_NACHFUELL_REPETITIONS    5  // so oft wird die Reserve Pumpe eingeschaltet.
 
 struct control_struct {
   unsigned int version;
