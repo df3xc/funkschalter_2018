@@ -1,4 +1,4 @@
-# test_new_blynk
+# flower_water
 
 A Particle project named test_new_blynk
 
