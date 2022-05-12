@@ -76,6 +76,23 @@ struct control_struct control;
 WidgetTerminal terminal(V22);
 
 /*---------------------------------------------------------------------
+change WiFi settings
+---------------------------------------------------------------------*/
+
+void setupWifi()
+{
+WiFi.on();
+
+if(WiFi.hasCredentials())
+  {
+  WiFi.clearCredentials();
+  }
+
+WiFi.setCredentials("Stitzenburg", "BC$_clu$_4277");
+Particle.connect();
+}
+
+/*---------------------------------------------------------------------
 -> runs one time after power on or HW reset.
 -> is not called on timer wake-up
 ---------------------------------------------------------------------*/
@@ -83,6 +100,8 @@ void setup()
 {
   Serial.begin(115200);
   delay(2000); // Allow board to settle
+
+  setupWifi();
 
   // Time.zone(+1); // Winterzeit
   Time.zone(+2); // Sommerzeit
@@ -96,9 +115,9 @@ void setup()
   hwID = System.deviceID();
   Serial.printlnf(hwID);
 
-  WiFi.on();
-  delay(3000);
-  Particle.connect();
+  //WiFi.on();
+  //delay(3000);
+  //Particle.connect();
 
   //   if (wifi_on()==true) 
   // {

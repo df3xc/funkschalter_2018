@@ -9,6 +9,7 @@
 6.July 2020 : added Reseve Pumpe. Platine mit Target erstellt und
              in Betrieb genommen.
 ---------------------------------------------------------------------*/
+void setupWifi();
 void setup();
 void sleep(int minutes);
 void loop();
@@ -107,6 +108,23 @@ struct control_struct control;
 WidgetTerminal terminal(V22);
 
 /*---------------------------------------------------------------------
+change WiFi settings
+---------------------------------------------------------------------*/
+
+void setupWifi()
+{
+WiFi.on();
+
+if(WiFi.hasCredentials())
+  {
+  WiFi.clearCredentials();
+  }
+
+WiFi.setCredentials("Stitzenburg", "BC$_clu$_4277");
+Particle.connect();
+}
+
+/*---------------------------------------------------------------------
 -> runs one time after power on or HW reset.
 -> is not called on timer wake-up
 ---------------------------------------------------------------------*/
@@ -114,6 +132,8 @@ void setup()
 {
   Serial.begin(115200);
   delay(2000); // Allow board to settle
+
+  setupWifi();
 
   // Time.zone(+1); // Winterzeit
   Time.zone(+2); // Sommerzeit
@@ -127,9 +147,9 @@ void setup()
   hwID = System.deviceID();
   Serial.printlnf(hwID);
 
-  WiFi.on();
-  delay(3000);
-  Particle.connect();
+  //WiFi.on();
+  //delay(3000);
+  //Particle.connect();
 
   //   if (wifi_on()==true) 
   // {
@@ -210,9 +230,6 @@ void sleep(int minutes)
 
     digitalWrite(DO_PUMPE_MAIN, 0);
     digitalWrite(DO_PUMPE_RESERVE, 0);
-    conrad_rsl_switch_code(5, AUS); // Dosen-Label RSL3
-    delay(1000);
-    conrad_rsl_switch_code(5, AUS); // Dosen-Label RSL3 
     WriteToDatabase("WASSER", "#### SLEEP Minutes #### : ", minutes);
     delay(1000);
 
@@ -227,7 +244,7 @@ void sleep(int minutes)
     WiFi.on();
     delay(5000);
     Particle.connect(); 
-    delay(3000);
+    delay(5000);
 
     if (Particle.connected() == true)
     {
@@ -325,6 +342,18 @@ void loop()
     //WriteToDatabase ( "CONTROL", "counter1 ",slow_counter);  
     printStatus();
     dontSleepHW = checkDontSleepPin();
+
+    if (tnow == (5*60 + 1))
+    {
+      conrad_rsl_switch_code(RSL4,0);
+      WriteToDatabase ( "CONTROL", "RSL4 abgeschaltet");      
+    }
+
+    if (tnow == (5*60 + 2))
+    {
+      conrad_rsl_switch_code(RSL4,1);
+      WriteToDatabase ( "CONTROL", "RSL4 eingeschaltet");     
+    }
 
     slow_counter++;
   } 
@@ -531,6 +560,12 @@ void printSlowStatus()
   {
     WriteToDatabase("WASSER", "WASSERSTAND : BLUMEN GIESSEN IST DEAKTIVIERT ");
   }
+
+  if(control.reserve_repetitions > MAX_NACHFUELL_REPETITIONS)
+    {
+        WriteToDatabase("WASSER", "WARNING : Wiederholungen des Tankfuellens ueberschritten = ",control.reserve_repetitions);    
+        return;                   
+    }  
 
   get_Temperature(); 
 
