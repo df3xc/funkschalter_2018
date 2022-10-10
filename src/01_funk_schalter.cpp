@@ -59,7 +59,8 @@ SYSTEM_MODE(MANUAL);
 SYSTEM_THREAD(ENABLED);
 
 // Ersetze "... das Gedoens ..." mit dem Token aus der Email von Blynk
-char auth[] = "2a5e74b8eebd444b8261b5d928ab77e6";
+//char auth[] = "2a5e74b8eebd444b8261b5d928ab77e6";  // old before June 2022
+char auth[] = "Yb9r5XgNM5JWUJ69ga4plY81X8qLcjit";  // since June 2022
 String hwID;
 
 int temp_in;

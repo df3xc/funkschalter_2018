@@ -16,7 +16,10 @@ void WriteToDatabase ( char* status,  char* option)
     sprintf(buffer,"{\"status\":\"%s\",\"time\":\"%.2d:%.2d:%.2d\",\"date\":\"%.2d.%.2d.%.2d\",\"luefter\":\"PHOTON\",\"option\":\"%s\"}", \
                     status,Time.hour(),Time.minute(),Time.second(),Time.day(),Time.month(),Time.year(),option);
 
+#ifdef debug_db   
     Serial.printlnf(buffer);
+#endif
+
     Particle.publish("wasserstand", buffer, PRIVATE);
     println(option);
     delay(2000);
@@ -39,7 +42,10 @@ void WriteToDatabase ( char* status,  char* option, int data)
     sprintf(buffer,"{\"status\":\"%s\",\"time\":\"%.2d:%.2d:%.2d\",\"date\":\"%.2d.%.2d.%.2d\",\"luefter\":\"PHOTON\",\"option\":\"%s %2d\"}", \
                     status,Time.hour(),Time.minute(),Time.second(),Time.day(),Time.month(),Time.year(),option,data);
 
+#ifdef debug_db   
     Serial.printlnf(buffer);
+#endif
+
     Particle.publish("wasserstand", buffer, PRIVATE);
     sprintf(buffer," %s %d ", option, data);
     println(option,data);

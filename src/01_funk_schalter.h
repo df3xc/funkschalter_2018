@@ -2,7 +2,7 @@
 #ifndef _funk_x
 #define _funk_x
 
-#define SW_VERSION 26
+#define SW_VERSION 32
 
 #define ON 1
 #define OFF 0
@@ -16,6 +16,7 @@
 #define LOW_LEVEL_TANKFUELLEN 95        // [mm] unterhalb dieses Pegels wird die Reserve Pumpe eingeschaltet
 #define RESERVE_PUMPE_LAUFZEIT  90      // sekunden
 #define MAX_NACHFUELL_REPETITIONS    5  // so oft wird die Reserve Pumpe eingeschaltet.
+#define FUNK_PUMPE_LAUFZEIT  12         // sekunden
 
 struct control_struct {
   unsigned int version;

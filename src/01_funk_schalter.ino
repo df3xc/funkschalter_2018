@@ -27,7 +27,8 @@ SYSTEM_MODE(MANUAL);
 SYSTEM_THREAD(ENABLED);
 
 // Ersetze "... das Gedoens ..." mit dem Token aus der Email von Blynk
-char auth[] = "2a5e74b8eebd444b8261b5d928ab77e6";
+char auth[] = "2a5e74b8eebd444b8261b5d928ab77e6";  // old Blynk before June 2022 (Blynk v.0.6.1)
+//char auth[] = "Yb9r5XgNM5JWUJ69ga4plY81X8qLcjit";  // new Blynk since June 2022
 String hwID;
 
 int temp_in;
@@ -93,11 +94,34 @@ Particle.connect();
 }
 
 /*---------------------------------------------------------------------
+-> init EEPROM the first time
+---------------------------------------------------------------------*/
+
+void init_control()
+
+{
+ EEPROM.get(0, control);
+
+ if ((control.pumpe_count_down < 30) | (control.pumpe_count_down > 240))
+  {
+    control.pumpe_count_down = 90;
+    control.reserve_repetitions = 0;
+    control.version = 1;
+    EEPROM.put(0, control);
+  }
+
+  WriteToDatabase("RESET", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
+
+}
+
+/*---------------------------------------------------------------------
 -> runs one time after power on or HW reset.
 -> is not called on timer wake-up
 ---------------------------------------------------------------------*/
 void setup()
 {
+  int day = 0;
+
   Serial.begin(115200);
   delay(2000); // Allow board to settle
 
@@ -114,21 +138,19 @@ void setup()
   Serial.printlnf("----------------------");
   hwID = System.deviceID();
   Serial.printlnf(hwID);
-
-  //WiFi.on();
-  //delay(3000);
-  //Particle.connect();
-
-  //   if (wifi_on()==true) 
-  // {
-  //   Serial.printlnf(" WIFI is on. Now connecting to cloud");  
-  //   Particle.connect();
-  //  }
+  
+  Blynk.begin(auth);
 
   delay(3000);
 
+  WriteToDatabase("RESET", "#### SETUP/RESET Version ",SW_VERSION);
+
+  init_control();
+
   if (Particle.connected() == true)
     {
+    Serial.printlnf("Connected to Particle Cloud");
+
     Particle.subscribe("particle/device/name", deviceNameHandler);
     Particle.publish("particle/device/name");
 
@@ -136,12 +158,11 @@ void setup()
     Particle.subscribe("hook-response/waterControl", myWebHookHandler, MY_DEVICES);
     Particle.publish("waterControl", buffer, PRIVATE);
     }
+    else
+    {
+     Serial.printlnf("WARNING : NOT Connected to Particle Cloud");     
+    }
 
-  Blynk.begin(auth);
-
-  delay(3000);
-
-  WriteToDatabase("RESET", "#### SETUP/RESET Version ",SW_VERSION);
   hwInit();
 
   EEPROM.get(0, control);
@@ -158,6 +179,9 @@ void setup()
   {
     WriteToDatabase("RESET", "WASSERSTAND : BLUMEN GIESSEN IST DEAKTIVIERT ");
   }
+
+  day = Time.weekday(); // North American implementation : Sunday is day number one, Monday is day numer two
+  Serial.printlnf("Day of week : %d",day);
 
   printSlowStatus();
 
@@ -491,6 +515,8 @@ print status infos
 void printSlowStatus()
 
 {
+  int day = 0;
+
   terminal.clear();
 
   timeStamp();
@@ -501,7 +527,8 @@ void printSlowStatus()
   getSleepTime(55); // time to wake up at minute = 55
 
   println(" Photon HW ID ", hwID);
-  Particle.publish("particle/device/name");
+    Particle.subscribe("particle/device/name", deviceNameHandler);
+    Particle.publish("particle/device/name");
   delay(500);
 
   checkDontSleepPin();
@@ -517,11 +544,15 @@ void printSlowStatus()
   println("pumpe_count_down   : ", control.pumpe_count_down);
   println("reserve_repetitions: ", control.reserve_repetitions);
 
+  day = Time.weekday(); // North American implementation : Sunday is day number one, Monday is day numer two
+  println("day of week        : ", day);
+
   WriteToDatabase("WASSER","dontGiessen:", control.dontGiessen);
   WriteToDatabase("WASSER","pumpe count down:", control.pumpe_count_down);
   WriteToDatabase("WASSER","reserve_repetitions: ", control.reserve_repetitions);
+  WriteToDatabase("WASSER","day of week: ", day);
 
-  waterlevel = ultra_sonic_measure();
+   waterlevel = ultra_sonic_measure();
   WriteToDatabase("WASSER","WASSERSTAND : ",waterlevel);
 
    if (control.dontGiessen == 1)
@@ -578,6 +609,7 @@ void deviceNameHandler(const char *topic, const char *data)
 {
   println("received  : " + String(topic));
   println("received  : " + String(data));
+  //WriteToDatabase("CONTROL", String(data));
 }
 
 // --------------------------------------------------------------
@@ -586,16 +618,16 @@ void deviceNameHandler(const char *topic, const char *data)
 void myWebHookHandler(const char *event, const char *data)
 {
   // Handle the integration response
-  println("received  : " + String(data));
+  println("Webhook received <" + String(data) + ">");
 
-  if ((String(data).startsWith("off")) & (control.dontGiessen == 0))
+  if (String(data).startsWith("off"))
   {
     control.dontGiessen = 1;
     EEPROM.put(0, control);
     WriteToDatabase("CONTROL", "WASSERSTAND : GIESSEN DEAKTIVIERT by WebHook");
   }
 
-  if ((String(data).startsWith("on")) & (control.dontGiessen == 1))
+  if (String(data).startsWith("on"))
   {
     control.dontGiessen = 0;
     EEPROM.put(0, control);
