@@ -24,7 +24,7 @@ void TankFuellen(int critical_level);
 int switch_pumpe_main(int new_state, int laufzeit) // pumpe ein- oder aus
 {
     Serial.printlnf(" --------------------------------------------- ");
-    Serial.printlnf(" MAIN Pumpe schalten : %d Zeit %d", new_state, laufzeit);
+    Serial.printlnf(" MAIN Pumpe schalten : State : %d Laufzeit %d", new_state, laufzeit);
 
     pinMode(DO_PUMPE_MAIN, OUTPUT);
     st_main_pumpe = digitalRead(DO_PUMPE_MAIN);
@@ -81,7 +81,7 @@ int switch_pumpe_reserve(int new_state, int laufzeit)
 
 {
     Serial.printlnf(" --------------------------------------------- ");
-    Serial.printlnf(" RESERVE Pumpe schalten : %d Zeit %d", new_state, laufzeit);
+    Serial.printlnf(" RESERVE Pumpe schalten : State : %d Laufzeit %d", new_state, laufzeit);
 
     pinMode(DO_PUMPE_RESERVE, OUTPUT);
     st_reserve_pumpe = digitalRead(DO_PUMPE_RESERVE);
@@ -219,13 +219,23 @@ void BlumenGiessen(int now, int ts)
         // BLaue Comet Pumpe, 4mm Schlauch, ohne Verteiler
         // 10 Sekunden ergibt 0.5L
 
+        // Sunday	1	0,5
+        // Monday	2	0,5
+        // Tuesday	3	0,5
+        // Wednesday 4	0,5
+        // Thursday	5	0,5
+        // Friday	6	
+        // Saturday	7	
+        //	    Total	2,5
+
+
         day = Time.weekday(); // North American implementation : Sunday is day number one, Monday is day numer two
 
-        if ( (day %2) == 0) // Monday, Wednesday, Friday, Sunday 
+        if (day < 6) // Funk Pumpe einschalten Sunday to Thursday 
         {
             st_funk_pumpe = switch_pumpe_funk(OFF,0);
             delay(1000);
-            st_funk_pumpe = switch_pumpe_funk(ON, 10);
+            st_funk_pumpe = switch_pumpe_funk(ON, FUNK_PUMPE_LAUFZEIT);
         }
         done_giessen = 1;
     }

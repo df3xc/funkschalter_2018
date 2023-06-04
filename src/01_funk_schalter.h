@@ -2,7 +2,7 @@
 #ifndef _funk_x
 #define _funk_x
 
-#define SW_VERSION 32
+#define SW_VERSION 42
 
 #define ON 1
 #define OFF 0

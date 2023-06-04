@@ -2,15 +2,12 @@
 24.12.2016  : added serial terminal commands
 6.July 2020 : added Reseve Pumpe. Platine mit Target erstellt und
              in Betrieb genommen.
+4.June 2023 : removed BLYNK functions
 ---------------------------------------------------------------------*/
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
 #include <time.h>
 
-//#define BLYNK_DEBUG // Uncomment this to see debug prints
-#define BLYNK_PRINT Serial
-
-#include "BlynkSimpleParticle.h" // connot be included in more that one INO/CPP File !!!
 
 #include "03_elro_switch.h"
 #include "04_rsl_switch.h"
@@ -27,7 +24,7 @@ SYSTEM_MODE(MANUAL);
 SYSTEM_THREAD(ENABLED);
 
 // Ersetze "... das Gedoens ..." mit dem Token aus der Email von Blynk
-char auth[] = "2a5e74b8eebd444b8261b5d928ab77e6";  // old Blynk before June 2022 (Blynk v.0.6.1)
+//char auth[] = "2a5e74b8eebd444b8261b5d928ab77e6";  // old Blynk before June 2022 (Blynk v.0.6.1)
 //char auth[] = "Yb9r5XgNM5JWUJ69ga4plY81X8qLcjit";  // new Blynk since June 2022
 String hwID;
 
@@ -73,8 +70,6 @@ uint dontSleepHW; // HW Pin =  1 -> do not enter sleep mode
 
 struct control_struct control;
 
-// Ein BLYNK APP Terminal an virtual pin V22
-WidgetTerminal terminal(V22);
 
 /*---------------------------------------------------------------------
 change WiFi settings
@@ -105,10 +100,11 @@ void init_control()
  if ((control.pumpe_count_down < 30) | (control.pumpe_count_down > 240))
   {
     control.pumpe_count_down = 90;
+  }
+
     control.reserve_repetitions = 0;
     control.version = 1;
     EEPROM.put(0, control);
-  }
 
   WriteToDatabase("RESET", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
 
@@ -139,9 +135,8 @@ void setup()
   hwID = System.deviceID();
   Serial.printlnf(hwID);
   
-  Blynk.begin(auth);
 
-  delay(3000);
+  delay(5000);  // allow to connect to PARTICLE
 
   WriteToDatabase("RESET", "#### SETUP/RESET Version ",SW_VERSION);
 
@@ -295,8 +290,6 @@ void loop()
   int minutes;
   int utime;
 
-  Blynk.run();
-
   fast_counter++;
   delay(10);
   tnow = getTime();
@@ -380,7 +373,7 @@ void loop()
 */
 void run_blynk()
 {
-  Blynk.run();
+
 }
 
 void myDelay ( int seconds)
@@ -388,7 +381,6 @@ void myDelay ( int seconds)
 for (int i = 0; i<(20*seconds); i++)
   {
     delay(50);
-    Blynk.run();  
   }
 }
 
@@ -460,8 +452,6 @@ void printStatus()
 
   timeStamp();
 
-  if (termEnabled == 1)
-    terminal.println(timebuffer);
 
   println(" tnow: ", tnow);
 
@@ -517,12 +507,8 @@ void printSlowStatus()
 {
   int day = 0;
 
-  terminal.clear();
-
   timeStamp();
 
-  if (termEnabled == 1)
-    terminal.println(timebuffer);
 
   getSleepTime(55); // time to wake up at minute = 55
 
@@ -769,11 +755,7 @@ void println(char *text)
   timeStamp();
   Serial.println(text);
 
-  if (termEnabled == 1)
-  {
-    terminal.println(text); // Ausgabe an BLYNK APP terminal
-    terminal.flush();
-  }
+
 }
 
 /*---------------------------------------------------------------------
@@ -785,11 +767,6 @@ void println(String text)
   timeStamp();
   Serial.println(text);
 
-  if (termEnabled == 1)
-  {
-    terminal.println(text); // Ausgabe an BLYNK APP terminal
-    terminal.flush();
-  }
 }
 
 /*---------------------------------------------------------------------
@@ -802,11 +779,6 @@ void println(char *text, int data)
 
   Serial.println(buffer);
 
-  if (termEnabled == 1)
-  {
-    terminal.println(buffer); // Ausgabe an BLYNK APP terminal
-    terminal.flush();
-  }
 }
 
 void println(char *text, String data)
@@ -816,286 +788,22 @@ void println(char *text, String data)
 
   Serial.println(buffer);
 
-  if (termEnabled == 1)
-  {
-    terminal.println(buffer); // Ausgabe an BLYNK APP terminal
-    terminal.flush();
-  }
 }
 
 #pragma endregion
 
-#pragma region blynk_buttons
-
-/*---------------------------------------------------------------------
-BLYNK Terminal
----------------------------------------------------------------------*/
-
-BLYNK_WRITE(V22)
-{
-  // send it back
-  Blynk.virtualWrite(V22, "\nYou said:", param.asStr());
-  char c;
-  c = *param.asStr();
-  dispatchCommand(c);
-}
-
-/*---------------------------------------------------------------------
-BLYNK Buttons Vx.
----------------------------------------------------------------------*/
-
-BLYNK_WRITE(V1)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" rsl 9 ein ");
-    conrad_rsl_switch_code(9, EIN);
-    Blynk.virtualWrite(V1, 255);
-  }
-}
-
-BLYNK_WRITE(V2)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" rsl 9 aus ");
-    conrad_rsl_switch_code(9, AUS);
-    Blynk.virtualWrite(V2, 255);
-  }
-}
-
-BLYNK_WRITE(V3)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" rsl 8 ein ");
-    conrad_rsl_switch_code(8, EIN);
-    Blynk.virtualWrite(V20, 255);
-  }
-}
-
-BLYNK_WRITE(V4)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    timeStamp();
-    println(" rsl 8 aus ");
-    conrad_rsl_switch_code(8, AUS);
-    Blynk.virtualWrite(V20, 0);
-  }
-}
-
-BLYNK_WRITE(V5)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" rsl 1 ein ");
-    conrad_rsl_switch_code(RSL1, EIN);
-    Blynk.virtualWrite(V20, 255);
-  }
-}
-
-BLYNK_WRITE(V6)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" rsl 1 aus ");
-    conrad_rsl_switch_code(RSL1, AUS);
-    Blynk.virtualWrite(V20, 0);
-  }
-}
-
-BLYNK_WRITE(V7) // Blumen giessen
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    done_giessen = 0;
-    BlumenGiessen(1, ts_giessen);
-    //st_funk_pumpe = switch_pumpe_funk(ON,3);
-    //conrad_rsl_switch_code(4,EIN);
-    Blynk.virtualWrite(V20, 255);
-  }
-}
-
-BLYNK_WRITE(V8)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    st_funk_pumpe = switch_pumpe_funk(OFF, 0);
-    st_main_pumpe = switch_pumpe_main(OFF, 0);
-    Blynk.virtualWrite(V20, 0);
-  }
-}
-
-BLYNK_WRITE(V9)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" rsl 3 ein ");
-    conrad_rsl_switch_code(RSL3, EIN);
-    Blynk.virtualWrite(V20, 255);
-  }
-}
-
-BLYNK_WRITE(V10)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" rsl 3 aus ");
-    conrad_rsl_switch_code(RSL3, AUS);
-    Blynk.virtualWrite(V20, 0);
-  }
-}
-
-BLYNK_WRITE(V11)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" weihnachten ein  ");
-    elro_switch(1, EIN);
-    elro_switch(2, EIN);
-    elro_switch(3, EIN);
-    Blynk.virtualWrite(V20, 255);
-  }
-}
-
-BLYNK_WRITE(V12)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" weihnachten aus  ");
-    elro_switch(1, AUS);
-    elro_switch(2, AUS);
-    elro_switch(3, AUS);
-    Blynk.virtualWrite(V20, 0);
-  }
-}
-
-BLYNK_WRITE(V13)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    println(" Terminal disabled  ");
-    termEnabled = 0;
-    termCounter = 0;
-    WriteToDatabase("CONTROL","TERMINAL disabled by Blynk Button");
-  }
-}
-
-BLYNK_WRITE(V14) // enable terminal and print status
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    termEnabled = 1;
-    println(" Terminal enabled  ");
-    WriteToDatabase("CONTROL","TERMINAL enabled by Blynk Button");    
-    termCounter = 3;
-    printSlowStatus();
-    printStatus();
-   
-  }
-}
 
 
-BLYNK_WRITE(V16)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-   switch_pumpe_funk(OFF,0); // pumpe aus  
-  }
-}
 
-BLYNK_WRITE(V17)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-   switch_pumpe_funk(ON,15); // pumpe ein  
-  }
-}
 
-BLYNK_WRITE(V25)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    control.dontSleepSW = 1;
-    EEPROM.put(0, control);
-    WriteToDatabase("CONTROL", "SLEEP DISABLED BY BLYNK BUTTON ");
-    println(" Sleep Mode Disabled by blynk button ");
-  }
-}
 
-BLYNK_WRITE(V26)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    control.dontSleepSW = 0;
-    EEPROM.put(0, control);
-    WriteToDatabase("CONTROL", "SLEEP ENABLED BY BLYNK BUTTON ");
-    println(" Sleep Mode Enabled by blynk button ");
-  }
-}
 
-BLYNK_WRITE(V27)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    WriteToDatabase("CONTROL", "Tankfuellen gestartet by BLYNK button ");   
-    TankFuellen(250);
 
-    println(" Tank fuellen by BLYNK button  ");
-  }
-}
 
-BLYNK_WRITE(V28)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    st_reserve_pumpe = switch_pumpe_reserve(OFF, 0);
-    WriteToDatabase("CONTROL", "Reserve Pumpe off by BLYNK button ");
-    println(" Reserve Pumpe ausgeschaltet by button ");
-  }
-}
 
-BLYNK_WRITE(V29)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    control.dontGiessen = 1;
-    EEPROM.put(0, control);
-    WriteToDatabase("CONTROL", "Blumen giessen deaktiviert by Blynk Button ");
-    println("Blumen giessen deaktiviert ");
-  }
-}
 
-BLYNK_WRITE(V30)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    control.dontGiessen = 0;
-    EEPROM.put(0, control);
-    WriteToDatabase("CONTROL", "Blumen giessen aktiviert by Blynk Button ");
-    println("Blumen giessen aktiviert ");
-  }
-}
 
-BLYNK_WRITE(V31)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    st_main_pumpe = switch_pumpe_main(ON, control.pumpe_count_down);
-    WriteToDatabase("CONTROL", "Main Pumpe eingeschaltet by BLYNK by button ");
-    println(" Main Pumpe eingeschaltet by BLYNK button  ");
-  }
-}
 
-BLYNK_WRITE(V32)
-{
-  if (param.asInt() == 1) // Schalter nieder gedrückt ?
-  {
-    st_main_pumpe = switch_pumpe_main(OFF, 0);
-    WriteToDatabase("CONTROL", "Main Pumpe ausgeschaltet by BLYNK button ");
-    println(" Main Pumpe ausgeschaltet by BLYNK button ");
-  }
-}
+
 
 #pragma endregion
