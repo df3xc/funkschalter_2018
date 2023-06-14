@@ -34,7 +34,6 @@ int  ultra_sonic_measure()
       dist = uMilli(time);
       hs[k] = dist;
       Serial.printlnf ( " ultra distance : %d mm", hs[k]);
-      run_blynk();
       delay(150);
   }
 
@@ -69,7 +68,6 @@ int  ultra_sonic_measure()
   if (level < 0 ) level = -1;
 
   Serial.printlnf ( " ultra level average : %d mm", level);
-  run_blynk();
 
   //WriteToDatabase("WASSER","WASSERSTAND : ",level);
 

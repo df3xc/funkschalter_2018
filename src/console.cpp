@@ -17,8 +17,6 @@ void dispatchCommand(char c)
   switch (c)
   {
   case 'h':
-    termEnabled = 1;
-    termCounter = 10;
     help();
     break;
 
@@ -61,6 +59,15 @@ void dispatchCommand(char c)
   case 'b':
     BlumenGiessen(1, ts_giessen);
     break;
+
+    case 'c':
+    println(" Trigger webHook ");
+    // Subscribe to the webHook integration response event
+    Particle.subscribe("hook-response/waterControl", myWebHookHandler, MY_DEVICES);
+    sprintf(buffer, " read from watercontrol ");
+    Particle.publish("waterControl", buffer, PRIVATE);
+    //WriteToWaterControl ();
+    break;  
 
   case 's':
     control.dontSleepSW = 0;

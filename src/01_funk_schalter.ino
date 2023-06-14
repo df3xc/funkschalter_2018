@@ -4,6 +4,12 @@
              in Betrieb genommen.
 4.June 2023 : removed BLYNK functions
 ---------------------------------------------------------------------*/
+
+
+//doctor water 
+//device ID 26003d000447343138333038
+//access_token=12c8554f1bcaf486a5e2dcf45705c3cf081e277a
+
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
 #include <time.h>
@@ -63,9 +69,6 @@ unsigned int AiPumpeReserve = 0;
 unsigned int Ai12V = 0;
 
 
-int termEnabled = 0;
-int termCounter = 0;
-
 uint dontSleepHW; // HW Pin =  1 -> do not enter sleep mode
 
 struct control_struct control;
@@ -89,7 +92,7 @@ Particle.connect();
 }
 
 /*---------------------------------------------------------------------
--> init EEPROM the first time
+-> init EEPROM the first time after power on
 ---------------------------------------------------------------------*/
 
 void init_control()
@@ -102,9 +105,9 @@ void init_control()
     control.pumpe_count_down = 90;
   }
 
-    control.reserve_repetitions = 0;
-    control.version = 1;
-    EEPROM.put(0, control);
+  control.reserve_repetitions = 0;
+  control.version = 1;
+  EEPROM.put(0, control);
 
   WriteToDatabase("RESET", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
 
@@ -135,8 +138,7 @@ void setup()
   hwID = System.deviceID();
   Serial.printlnf(hwID);
   
-
-  delay(5000);  // allow to connect to PARTICLE
+  delay(7000);  // allow to connect to PARTICLE
 
   WriteToDatabase("RESET", "#### SETUP/RESET Version ",SW_VERSION);
 
@@ -182,10 +184,27 @@ void setup()
 
   help();
 
-  tnow = getTime();
+  pinMode(DO_PUMPE_MAIN, OUTPUT);
+  digitalWrite(DO_PUMPE_MAIN, 1);
+  WriteToDatabase("RESET", "TEST: HAUPT-PUMPE EINGESCHALTET : ", main_countDown);tnow = getTime();
+  delay(8000);  
+  digitalWrite(DO_PUMPE_MAIN, 0);
+  WriteToDatabase("RESET", "TEST: HAUPT-PUMPE AUSGESCHALTET : ", main_countDown);tnow = getTime();
+
+  pinMode(DO_PUMPE_RESERVE, OUTPUT);
+  digitalWrite(DO_PUMPE_RESERVE, 1);
+  WriteToDatabase("RESET", "TEST: RESERVE-PUMPE EINGESCHALTET : ", main_countDown);tnow = getTime();
+  delay(4000);
+  digitalWrite(DO_PUMPE_RESERVE, 0);
+  WriteToDatabase("RESET", "TEST: RESERVE-PUMPE AUSGESCHALTET : ", main_countDown);tnow = getTime();
+
+  conrad_rsl_switch_code(RSL2,1);
+  WriteToDatabase ( "RESET", "TEST: RSL2 eingeschaltet"); 
+  delay(4000);
+  conrad_rsl_switch_code(RSL2,0);
+  WriteToDatabase ( "RESET", "TEST: RSL2 ausgeschaltet"); 
 
   fast_counter = 60000;
-  termEnabled = 0;
 }
 
 /*---------------------------------------------------------------------
@@ -231,20 +250,24 @@ void sleep(int minutes)
     WiFi.on();
     delay(5000);
     Particle.connect(); 
-    delay(5000);
+    delay(8000);
 
     if (Particle.connected() == true)
     {
-    WriteToDatabase("WAKE UP", "#### WAKE UP ####");
-    WriteToDatabase("WAKE UP", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
+        WriteToDatabase("WAKE UP", "#### WAKE UP ####");
+        WriteToDatabase("WAKE UP", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
 
-    // Subscribe to the integration response event
-    Particle.subscribe("particle/device/name", deviceNameHandler);
-    Particle.subscribe("hook-response/waterControl", myWebHookHandler, MY_DEVICES);
-    delay(500);
-    Particle.publish("particle/device/name");
-    delay(500);
-    Particle.publish("waterControl", buffer, PRIVATE);
+        // Subscribe to the integration response event
+        Particle.subscribe("particle/device/name", deviceNameHandler);
+        Particle.subscribe("hook-response/waterControl", myWebHookHandler, MY_DEVICES);
+        delay(500);
+        Particle.publish("particle/device/name");
+        delay(500);
+        Particle.publish("waterControl", buffer, PRIVATE);
+    }
+    else
+    {
+       WriteToDatabase("WAKE UP", "Not connected to particle cloud");   
     }
 
     tnow = getTime();
@@ -277,7 +300,6 @@ void sleep(int minutes)
 
     slow_counter = 0;
     fast_counter = 0;
-    termEnabled = 0;
   }
 }
 
@@ -354,27 +376,10 @@ void loop()
       done_giessen = 0; // armed for the next day
     }
 
-    if (termCounter > 0)
-    {
-      termCounter--;
-      if (termCounter == 0)
-      { 
-        println("Terminal disabled");      
-        termEnabled == 0;
-        WriteToDatabase("CONTROL","TERMINAL disabled by timeout");
-      }
-    }
   }
  
 } // loop
 
-/*
-* run blynk
-*/
-void run_blynk()
-{
-
-}
 
 void myDelay ( int seconds)
 {
@@ -451,8 +456,6 @@ void printStatus()
   cloudReady = Particle.connected();
 
   timeStamp();
-
-
   println(" tnow: ", tnow);
 
   readAdcChannels();
@@ -494,6 +497,7 @@ void printStatus()
     WriteToDatabase("STATUS", "FUNK Pumpe is ON ");
   }
 
+
   Serial.printlnf(" waterlevel: %d ", waterlevel);
   Serial.printlnf(" wifi=%s cloud=%s fast_counter=%d ", (wifiReady ? "on" : "off"), (cloudReady ? "on" : "off"), fast_counter);
 
@@ -509,7 +513,6 @@ void printSlowStatus()
 
   timeStamp();
 
-
   getSleepTime(55); // time to wake up at minute = 55
 
   println(" Photon HW ID ", hwID);
@@ -520,6 +523,7 @@ void printSlowStatus()
   checkDontSleepPin();
   reportDontSleepPin();
 
+  sprintf(buffer,"check watercontrol");
   Particle.publish("waterControl", buffer, PRIVATE);
 
   EEPROM.get(0, control);
@@ -538,8 +542,11 @@ void printSlowStatus()
   WriteToDatabase("WASSER","reserve_repetitions: ", control.reserve_repetitions);
   WriteToDatabase("WASSER","day of week: ", day);
 
-   waterlevel = ultra_sonic_measure();
+  waterlevel = ultra_sonic_measure();
   WriteToDatabase("WASSER","WASSERSTAND : ",waterlevel);
+
+  sprintf(buffer,"check watercontrol");
+  Particle.publish("waterControl", buffer, PRIVATE);
 
    if (control.dontGiessen == 1)
   {
@@ -606,19 +613,59 @@ void myWebHookHandler(const char *event, const char *data)
   // Handle the integration response
   println("Webhook received <" + String(data) + ">");
 
+ EEPROM.get(0, control);
+
   if (String(data).startsWith("off"))
   {
-    control.dontGiessen = 1;
-    EEPROM.put(0, control);
     WriteToDatabase("CONTROL", "WASSERSTAND : GIESSEN DEAKTIVIERT by WebHook");
+    if(control.dontGiessen == 0)
+    {
+      control.dontGiessen = 1;
+      EEPROM.put(0, control);
+      WriteToDatabase("CONTROL", "setting stored in EEPROM");
+    }
   }
 
   if (String(data).startsWith("on"))
   {
-    control.dontGiessen = 0;
-    EEPROM.put(0, control);
     WriteToDatabase("CONTROL", "WASSERSTAND : GIESSEN AKTIVIERT by WebHook");
+
+    if (control.dontGiessen == 1)
+    {    
+      control.dontGiessen = 0;
+      EEPROM.put(0, control);
+      WriteToDatabase("CONTROL", "setting stored in EEPROM");      
+    }
+
   }
+
+  if (String(data).startsWith("sleep_off"))
+  {
+    WriteToDatabase("CONTROL", "SLEEP disabled by WebHook");
+
+    if (control.dontSleepSW == 0)
+    {
+      control.dontSleepSW == 1;
+      EEPROM.put(0, control);
+      WriteToDatabase("CONTROL", "setting stored in EEPROM");      
+    }
+
+  }
+
+  if (String(data).startsWith("sleep_on"))
+  {
+    WriteToDatabase("CONTROL", "SLEEP enabled by WebHook");   
+
+    if (control.dontSleepSW == 1)
+    {
+      control.dontSleepSW == 0;
+      EEPROM.put(0, control);
+      WriteToDatabase("CONTROL", "setting stored in EEPROM");      
+    }
+
+  }
+
+
 }
 /*---------------------------------------------------------------------
 report to database if DontSleepPin is set
@@ -740,11 +787,6 @@ void timeStamp()
 
   Serial.print(timebuffer);
 
-/*   if (termEnabled == 1)
-  {
-    terminal.print(timebuffer); // Ausgabe an BLYNK APP terminal
-    terminal.flush();
-  }  */
 }
 
 /*---------------------------------------------------------------------
@@ -800,10 +842,3 @@ void println(char *text, String data)
 
 
 
-
-
-
-
-
-
-#pragma endregion

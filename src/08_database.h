@@ -3,6 +3,7 @@
 
  void WriteToDatabase ( char* status,  char* option);
  void WriteToDatabase ( char* status,  char* option, int data);
+ void WriteToWaterControl ();
  void reportToLuefter(char* text);
 
  #endif

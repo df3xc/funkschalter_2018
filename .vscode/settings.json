@@ -1,7 +1,7 @@
 {
     "C_Cpp.default.configurationProvider": "particle.particle-vscode-core",
     "particle.targetDevice": "doctor_water",
-    "particle.firmwareVersion": "3.0.0",
+    "particle.firmwareVersion": "3.3.0-rc.1",
     "particle.targetPlatform": "photon",
     "files.associations": {
         "*.txt": "cpp",
@@ -16,5 +16,6 @@
         "xstring": "cpp",
         "atomic": "cpp",
         "type_traits": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": true
 }

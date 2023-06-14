@@ -52,6 +52,29 @@ void WriteToDatabase ( char* status,  char* option, int data)
 
 
 /*---------------------------------------------------------------------
+Write to my database at www.carstenlueck.de
+---------------------------------------------------------------------*/
+void WriteToWaterControl ()
+{
+    if (Particle.connected() == false)
+    {
+        Serial.printlnf("### WARNING : not connected to cloud. cannot write to database");
+        return;
+    }
+  
+    sprintf(buffer,"hallo");
+
+#ifdef debug_db   
+    Serial.printlnf(buffer);
+#endif
+
+    Particle.publish("waterControl", buffer, PRIVATE);
+    println("publish watercontrol");
+    delay(2000);
+}
+
+
+/*---------------------------------------------------------------------
 send text to WCW Luefter using TCP Client
 ---------------------------------------------------------------------*/
 void reportToLuefter(char* text)

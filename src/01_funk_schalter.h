@@ -18,6 +18,8 @@
 #define MAX_NACHFUELL_REPETITIONS    5  // so oft wird die Reserve Pumpe eingeschaltet.
 #define FUNK_PUMPE_LAUFZEIT  12         // sekunden
 
+void myWebHookHandler(const char *event, const char *data);
+
 struct control_struct {
   unsigned int version;
   unsigned int dontSleepSW;         // 1 = do not enter sleep Mode

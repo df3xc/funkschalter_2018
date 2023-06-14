@@ -8,7 +8,14 @@
 24.12.2016  : added serial terminal commands
 6.July 2020 : added Reseve Pumpe. Platine mit Target erstellt und
              in Betrieb genommen.
+4.June 2023 : removed BLYNK functions
 ---------------------------------------------------------------------*/
+
+
+//doctor water 
+//device ID 26003d000447343138333038
+//access_token=12c8554f1bcaf486a5e2dcf45705c3cf081e277a
+
 void setupWifi();
 void init_control();
 void setup();
@@ -35,15 +42,11 @@ void println(char *text);
 void println(String text);
 void println(char *text, int data);
 void println(char *text, String data);
-#line 6 "d:/funkschalter_2018/src/01_funk_schalter.ino"
+#line 13 "d:/funkschalter_2018/src/01_funk_schalter.ino"
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
 #include <time.h>
 
-//#define BLYNK_DEBUG // Uncomment this to see debug prints
-#define BLYNK_PRINT Serial
-
-//#include "BlynkSimpleParticle.h" // connot be included in more that one INO/CPP File !!!
 
 #include "03_elro_switch.h"
 #include "04_rsl_switch.h"
@@ -136,10 +139,11 @@ void init_control()
  if ((control.pumpe_count_down < 30) | (control.pumpe_count_down > 240))
   {
     control.pumpe_count_down = 90;
+  }
+
     control.reserve_repetitions = 0;
     control.version = 1;
     EEPROM.put(0, control);
-  }
 
   WriteToDatabase("RESET", "PUMPE MAIN COUNTDOWN IS ", control.pumpe_count_down);
 
@@ -171,7 +175,7 @@ void setup()
   Serial.printlnf(hwID);
   
 
-  delay(3000);
+  delay(5000);  // allow to connect to PARTICLE
 
   WriteToDatabase("RESET", "#### SETUP/RESET Version ",SW_VERSION);
 
@@ -217,7 +221,19 @@ void setup()
 
   help();
 
-  tnow = getTime();
+  pinMode(DO_PUMPE_MAIN, OUTPUT);
+  digitalWrite(DO_PUMPE_MAIN, 1);
+  WriteToDatabase("RESET", "TEST: HAUPT-PUMPE EINGESCHALTET : ", main_countDown);tnow = getTime();
+  delay(8000);  
+  digitalWrite(DO_PUMPE_MAIN, 0);
+  WriteToDatabase("RESET", "TEST: HAUPT-PUMPE AUSGESCHALTET : ", main_countDown);tnow = getTime();
+
+  pinMode(DO_PUMPE_RESERVE, OUTPUT);
+  digitalWrite(DO_PUMPE_RESERVE, 1);
+  WriteToDatabase("RESET", "TEST: RESERVE-PUMPE EINGESCHALTET : ", main_countDown);tnow = getTime();
+  delay(5000);
+  digitalWrite(DO_PUMPE_RESERVE, 0);
+  WriteToDatabase("RESET", "TEST: RESERVE-PUMPE AUSGESCHALTET : ", main_countDown);tnow = getTime();
 
   fast_counter = 60000;
   termEnabled = 0;
@@ -389,6 +405,16 @@ void loop()
       done_giessen = 0; // armed for the next day
     }
 
+    if (termCounter > 0)
+    {
+      termCounter--;
+      if (termCounter == 0)
+      { 
+        println("Terminal disabled");      
+        termEnabled == 0;
+        WriteToDatabase("CONTROL","TERMINAL disabled by timeout");
+      }
+    }
   }
  
 } // loop
