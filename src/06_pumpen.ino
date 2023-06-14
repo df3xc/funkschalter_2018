@@ -3,6 +3,33 @@
 #include "08_database.h"
 #include "04_rsl_switch.h"
 
+/*---------------------------------------------------------------------
+ run one time after power on or HW reset.
+---------------------------------------------------------------------*/
+
+void poweron_pumpen_test()
+
+{
+  pinMode(DO_PUMPE_MAIN, OUTPUT);
+  digitalWrite(DO_PUMPE_MAIN, 1);
+  WriteToDatabase("RESET", "TEST: HAUPT-PUMPE EINGESCHALTET : ", main_countDown);tnow = getTime();
+  delay(6000);  
+  digitalWrite(DO_PUMPE_MAIN, 0);
+  WriteToDatabase("RESET", "TEST: HAUPT-PUMPE AUSGESCHALTET : ", main_countDown);tnow = getTime();
+
+  pinMode(DO_PUMPE_RESERVE, OUTPUT);
+  digitalWrite(DO_PUMPE_RESERVE, 1);
+  WriteToDatabase("RESET", "TEST: RESERVE-PUMPE EINGESCHALTET : ", main_countDown);tnow = getTime();
+  delay(4000);
+  digitalWrite(DO_PUMPE_RESERVE, 0);
+  WriteToDatabase("RESET", "TEST: RESERVE-PUMPE AUSGESCHALTET : ", main_countDown);tnow = getTime();
+
+  conrad_rsl_switch_code(RSL2,1);
+  WriteToDatabase ( "RESET", "TEST: RSL2 eingeschaltet"); 
+  delay(4000);
+  conrad_rsl_switch_code(RSL2,0);
+  WriteToDatabase ( "RESET", "TEST: RSL2 ausgeschaltet"); 
+}
 
 
 /*---------------------------------------------------------------------

@@ -113,6 +113,7 @@ void init_control()
 
 }
 
+
 /*---------------------------------------------------------------------
 -> runs one time after power on or HW reset.
 -> is not called on timer wake-up
@@ -180,30 +181,11 @@ void setup()
   day = Time.weekday(); // North American implementation : Sunday is day number one, Monday is day numer two
   Serial.printlnf("Day of week : %d",day);
 
+  poweron_pumpen_test();  // check pumpen after poweron or reset
+
   printSlowStatus();
 
   help();
-
-  pinMode(DO_PUMPE_MAIN, OUTPUT);
-  digitalWrite(DO_PUMPE_MAIN, 1);
-  WriteToDatabase("RESET", "TEST: HAUPT-PUMPE EINGESCHALTET : ", main_countDown);tnow = getTime();
-  delay(8000);  
-  digitalWrite(DO_PUMPE_MAIN, 0);
-  WriteToDatabase("RESET", "TEST: HAUPT-PUMPE AUSGESCHALTET : ", main_countDown);tnow = getTime();
-
-  pinMode(DO_PUMPE_RESERVE, OUTPUT);
-  digitalWrite(DO_PUMPE_RESERVE, 1);
-  WriteToDatabase("RESET", "TEST: RESERVE-PUMPE EINGESCHALTET : ", main_countDown);tnow = getTime();
-  delay(4000);
-  digitalWrite(DO_PUMPE_RESERVE, 0);
-  WriteToDatabase("RESET", "TEST: RESERVE-PUMPE AUSGESCHALTET : ", main_countDown);tnow = getTime();
-
-  conrad_rsl_switch_code(RSL2,1);
-  WriteToDatabase ( "RESET", "TEST: RSL2 eingeschaltet"); 
-  delay(4000);
-  conrad_rsl_switch_code(RSL2,0);
-  WriteToDatabase ( "RESET", "TEST: RSL2 ausgeschaltet"); 
-
   fast_counter = 60000;
 }
 
@@ -365,7 +347,7 @@ void loop()
     slow_counter++;
   } 
 
-  if (slow_counter > 300) // once per 10 minutes
+  if (slow_counter > 150) // once per 5 minutes
   {
 
     slow_counter = 0;
@@ -645,7 +627,7 @@ void myWebHookHandler(const char *event, const char *data)
 
     if (control.dontSleepSW == 0)
     {
-      control.dontSleepSW == 1;
+      control.dontSleepSW = 1;
       EEPROM.put(0, control);
       WriteToDatabase("CONTROL", "setting stored in EEPROM");      
     }
@@ -658,7 +640,7 @@ void myWebHookHandler(const char *event, const char *data)
 
     if (control.dontSleepSW == 1)
     {
-      control.dontSleepSW == 0;
+      control.dontSleepSW = 0;
       EEPROM.put(0, control);
       WriteToDatabase("CONTROL", "setting stored in EEPROM");      
     }
