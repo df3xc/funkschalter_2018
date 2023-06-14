@@ -60,9 +60,6 @@ int st_main_pumpe = 0;    // status Haupt-Wasserpumpe
 int st_funk_pumpe = 0;    // status Funk-Wasserpumpe
 int st_reserve_pumpe = 0; // status der resereve tank st_funk_pumpe
 
-int main_countDown = 0;
-int reserve_countDown = 0;
-int funk_countDown = 0;
 
 unsigned int AiPumpeMain = 0;
 unsigned int AiPumpeReserve = 0;

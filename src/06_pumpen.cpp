@@ -44,13 +44,12 @@ int switch_pumpe_main(int new_state, int laufzeit) // pumpe ein- oder aus
         tnow = getTime();
         tmain_stop = tsec + laufzeit;
         digitalWrite(DO_PUMPE_MAIN, 1);
-        WriteToDatabase("WASSER", "HAUPT-PUMPE EINGESCHALTET : ", main_countDown);
+        WriteToDatabase("WASSER", "HAUPT-PUMPE EINGESCHALTET : ", laufzeit);
     }
 
     if ((new_state == OFF) & (st_main_pumpe == ON))
     {
         digitalWrite(DO_PUMPE_MAIN, 0);
-        main_countDown = 0;
         WriteToDatabase("WASSER", "HAUPT-PUMPE AUSGESCHALTET ");
         new_level = ultra_sonic_measure();
         WriteToDatabase("WASSER", "WASSERSTAND after pumpe OFF : ", new_level);
